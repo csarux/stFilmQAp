@@ -1,0 +1,59 @@
+<annotation>
+    <folder>img_dir</folder>
+    <filename>Film.png</filename>
+    <path>/home/radiofisica/Shares/Radiofisica/csr/streamlit/img_dir/Film.png</path>
+    <source>
+        <database>Unknown</database>
+    </source>
+    <size>
+        <width>577</width>
+        <height>976</height>
+        <depth>3</depth>
+    </size>
+    <segmented>0</segmented>
+    <object>
+        <name>Film</name>
+        <pose>Unspecified</pose>
+        <truncated>0</truncated>
+        <difficult>0</difficult>
+        <bndbox>
+            <xmin>68</xmin>
+            <ymin>502</ymin>
+            <xmax>522</xmax>
+            <ymax>941</ymax>
+        </bndbox>
+    </object>    <object>
+        <name>Calibration</name>
+        <pose>Unspecified</pose>
+        <truncated>0</truncated>
+        <difficult>0</difficult>
+        <bndbox>
+            <xmin>262</xmin>
+            <ymin>39</ymin>
+            <xmax>327</xmax>
+            <ymax>493</ymax>
+        </bndbox>
+    </object>    <object>
+        <name>Background</name>
+        <pose>Unspecified</pose>
+        <truncated>0</truncated>
+        <difficult>0</difficult>
+        <bndbox>
+            <xmin>361</xmin>
+            <ymin>139</ymin>
+            <xmax>401</xmax>
+            <ymax>373</ymax>
+        </bndbox>
+    </object>    <object>
+        <name>Center</name>
+        <pose>Unspecified</pose>
+        <truncated>0</truncated>
+        <difficult>0</difficult>
+        <bndbox>
+            <xmin>286</xmin>
+            <ymin>944</ymin>
+            <xmax>305</xmax>
+            <ymax>966</ymax>
+        </bndbox>
+    </object>
+</annotation>
