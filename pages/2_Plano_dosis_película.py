@@ -13,6 +13,9 @@ from skimage import img_as_ubyte
 from skimage.exposure import rescale_intensity
 from streamlit_img_label.manage import ImageManager, ImageDirManager
 from streamlit_img_label import st_img_label
+# - Config file
+import configparser
+
 
 def run(img_dir, labels):
     st.set_option("deprecation.showfileUploaderEncoding", False)
@@ -90,6 +93,7 @@ def run(img_dir, labels):
     rects = st_img_label(resized_img, box_color="red", rects=resized_rects)
 
     def process():
+        imfile = 'img_dir/' + scim.name
         im.save_annotation()
         image_annotate_file_name = img_file_name.split(".")[0] + ".xml"
         if image_annotate_file_name not in st.session_state["annotation_files"]:
@@ -98,6 +102,23 @@ def run(img_dir, labels):
 
         lbdf = pd.DataFrame(im._current_rects)
         lbdf.to_csv('tmp/bb.csv')
+
+        # Segmentar la imagen
+        fqa.segRegs(imfile=imfile)
+
+        # Leer la configuración
+        config = configparser.ConfigParser()
+        configfile='config/filmQAp.config'
+        config.read(configfile)
+
+        # Determinar las coordenadas para la corrección lateral
+        cdf = fqa.coordOAC(imfile=imfile)
+        # Determinación del fondo
+        abase = fqa.baseDetermination(imfile=imfile, config=config)
+        # Calibración de la digitalización
+        caldf=fqa.PDDCalibration(config=config, imfile=imfile, base=abase)
+        # Determinación de la dosis en cada canal
+        fqa.mphspcnlmprocf_multiprocessing(imfile=imfilename, config=config, caldf=caldf, ccdf=cdf)
 
 
     if rects:

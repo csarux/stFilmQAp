@@ -18,16 +18,41 @@ import configparser
 from datetime import datetime
 # - Paths and file extensions managing
 from pathlib import Path
+# - Numerical calculations
+import numpy as np
 # - Data mamaging
 import pandas as pd
 # - DICOM files editing
 import pydicom as dicom
+# - TIFF files
+from tifffile import TiffFile
+from tifffile import imread as timread, imwrite as timwrite
+# - Image processing
+from skimage.io import imread, imsave
+from skimage import img_as_float, img_as_uint
+from skimage.measure import profile_line
+# - Non-local means
+from skimage.restoration import denoise_nl_means
+# - JSON Files
+from json import dumps
+# - Non-local means
+from skimage.restoration import denoise_nl_means
+# - Interpolation
+from scipy.interpolate import interp1d
+# - Numerical non linear fits
+from scipy.optimize import curve_fit
+from scipy.optimize import minimize
+# - Non linear function inversion
+from scipy.optimize import fsolve
+# - Calibration models fits
+from lmfit import Parameters, Model
+
 
 # Funcion definitions
 
 def HeaderCreator(DataOriginDateTime='', AcqType='Acquired Portal', PatientId1='', PatientId2='', LastName='', FirstName='', pxsp=[], imsz=[]):
     """
-    A function to create the heaer of the dxf file
+    A function to create the header of the dxf file
 
     ...
 
@@ -226,3 +251,507 @@ def dcm2dxf(dcmf=None):
               PatientId2=demodict['PatientId1'], LastName=demodict['LastName'],
               FirstName=demodict['FirstName'], pxsp=pxsp, imsz=imsz)
     return dxffilePath
+
+def calf(D, f, phir, kr, phib, kb):
+    """
+    The two phase polymer model dose response general function for every channel
+
+    ...
+
+    Attributes
+    ----------
+    D : float64
+        Absorbed dose
+
+    f : float64
+        The base optical density
+
+    phir : float64
+        The relative abundance of the red phase polymer
+
+    kr : float64
+        The exponent in the saturation term of the red phase polymer
+
+    phib : float64
+        The relative abundance of the blue phase polymer
+
+    kb : float64
+        The exponent in the saturation term of the blue phase polymer
+
+    Returns
+    -------
+    d : float64
+        The optical density in each channel corresponding to the absorbed dose D following the sensitometry model based on the growth of two polymer phases
+
+    """
+
+    return f + phir * (1-np.exp(-kr*D)) + phib * (1-np.exp(-kb*D))
+
+def iratf(d, a, b, c):
+    """
+    The calibration function following a sensitometric model bases in rational functions
+
+    ...
+
+    Attributes
+    ----------
+    d : float64
+        Optical density as measured by the scanner
+
+    a : float64
+        First rational function parameter
+
+    b : float64
+        Second rational function parameter
+
+    c : float64
+        Third rational function parameter
+
+    Returns
+    -------
+    D : float64
+        The abosrbed dose D corresponding to the optical density d in each channel following the sensitometry model based on rational functions
+
+    """
+
+    return (a - c * 10**-d)/(10**-d - b)
+
+def coordOAC(imfile=None, bbfile='./tmp/bb.csv'):
+    """
+    A function to calculate the relavant coordiantes for the off-axis spatial correction
+
+    ...
+
+    Attributes
+    ----------
+    imfile : str
+        The name of the image file, the file containing the scanned image of the dose distribution, the calibration strip and the base strip in TIFF format.
+    bbfile : str
+        the name of the bounding box file, the file containing the position and size of the bounding boxes of the image file. It should be a csv file.
+
+    Returns
+    -------
+    cdf : pandas DataFrame
+        A pandas DataFrame containing the relavant coordiantes for the off-axis spatial correction
+
+    """
+    bbdf = pd.read_csv(bbfile)
+
+    creg = bbdf.loc[bbdf.label == 'Center'] # Image center
+    o = creg.left.values[0] + int(creg.width.values[0]/2)
+    calreg = bbdf.loc[bbdf.label == 'Calibration'] # Calibration strip
+    c = calreg.left.values[0] + int(calreg.width.values[0]/2)
+    dosereg = bbdf.loc[bbdf.label == 'Film'] # Film dose region
+    p0 = dosereg.left.values[0]
+
+    pxsp = TIFFPixelSpacing(imfile=imfile)
+    s = pxsp[0]
+
+    lcdf = pd.DataFrame({'o' : o, 'c' : c, 'p0' : p0, 's' : s}, index=[0])
+
+    return lcdf
+
+def TIFFPixelSpacing(imfile=None):
+    """
+    A function to get the pixel spacing from the TIFF file
+
+    ...
+
+    Attributes
+    ----------
+    imfile : str
+        The name of the scan image with the measured dose distribution, the calibration strip and the background patch
+
+     Returns
+    -------
+        pxsp :  List
+        A list with the X and Y pixel spacing in mm
+    """
+
+    with TiffFile(imfile) as tif:
+        page_tags = tif.pages[0].tags
+    xres = page_tags['XResolution'].value
+    yres = page_tags['YResolution'].value
+    xdpi = xres[0]/xres[1]
+    ydpi = yres[0]/yres[1]
+    inch = 25.4 # mm
+    return [inch/xdpi, inch/ydpi]
+
+def segRegs(imfile=None, bbfile='tmp/bb.csv'):
+    """
+    A function to segment the film image
+
+    ...
+
+    Attributes
+    ----------
+    imfile : str
+        The name of the image file, the file containing the scanned image of the dose distribution, the calibration strip and the base strip in TIFF format.
+    bbfile : str
+        the name of the bounding box file, the file containing the position and size of the bounding boxes of the image file. It should be a csv file.
+
+    Returns
+    -------
+    No value returned
+
+    """
+    # Leer el archivo de regiones de interes y generar un dataframe con las coordenas y dimensiones de las regiones
+    bbdf = pd.read_csv(bbfile)
+    # Nombre del archivo de imagen
+    filename = Path(imfile)
+    # Segmentar el archivo de imagen
+    im = imread(imfile)
+    for r in ['Film', 'Calibration', 'Background', 'Center']:
+        reg = bbdf.loc[bbdf.label == r]
+        rim = im[reg.top.values[0]:reg.top.values[0]+reg.height.values[0], reg.left.values[0]:reg.left.values[0]+reg.width.values[0], :]
+        # Leer los metadatos del archivo de imagen
+        with TiffFile(imfile) as tif:
+            page_tags = tif.pages[0].tags
+            # Guardar cada regiÃ³n un archivo
+            # Extratags
+            metadata_tag = dumps({"PatientId": '001PATFILM', "PatientName": 'Prueba', 'PatientFamilyName' : 'PelÃ­culas', 'Sex' : 'Male'})
+            extra_tags = [("MicroManagerMetadata", 's', 0, metadata_tag, True),
+                          ('Make', 's', 0, page_tags['Make'].value, True),
+                          ('Model', 's', 0, page_tags['Model'].value, True),
+                          ('DateTime', 's', 0, page_tags['DateTime'].value, True),
+                          ("ProcessingSoftware", 's', 0, "pyFilmQAModule", True)]
+            timwrite(filename.with_suffix('.' + str(r) + '.tif'), rim, extratags=extra_tags)
+
+def baseDetermination(imfile=None, config=None):
+    """
+    A function to calculate the base value in every color channel
+
+    ...
+
+    Attributes
+    ---------
+    imfile : str
+        The name of the image file, the file containing the scanned image of the dose distribution, the calibration strip and the base strip in TIFF format.
+
+    config : ConfigParser
+        An object with the functionalities of the configparser module
+
+    Returns
+    -------
+    imbase : float64 numpy array
+        An array containing the value of the base digital signal in every color channel.
+
+    """
+    # Derivar el nombre del archivo de fondo
+    bkgfilename = Path(imfile)
+    bkgfilename = bkgfilename.with_suffix('.Background.tif')
+    # Leer la imagen de fondo
+    fim = imread(bkgfilename)
+    # Tomar el valor del margen del arhivo de configuraciÃ³n
+    mrg = int(config['Base']['margin'])
+    # Tomar la parte central
+    fim = fim[mrg:-mrg, mrg:-mrg, :]
+    # Devolver el valor del fondo en cada canal
+    return np.log10(2**16/fim.mean(axis=(0,1)))
+
+def nlmf(imfile=None, config=None):
+    """
+    A function to denoise a multichannel image using a non-local means procedure.
+
+    imfile : str
+        The name of the image file, the file containing the image to be denoised.
+
+    config : ConfigParser
+        An object with the functionalities of the configparser module
+
+    Returns
+    -------
+    udim = unsigned int numpy array
+        A numpy array of unsigned ints with shape (xpixels, ypixels, channels)
+    """
+    im = imread(imfile)
+    fim=img_as_float(im)
+    dim=denoise_nl_means(fim,
+                         patch_size = int(config['NonLocalMeans']['PatchSize']),
+                         patch_distance = int(config['NonLocalMeans']['PatchDistance']),
+                         h=float(config['NonLocalMeans']['h']),
+                         channel_axis=int(config['NonLocalMeans']['ChannelAxis']))
+    udim=img_as_uint(dim)
+
+    return udim
+
+def PDDCalibration(config=None, imfile=None, base=None):
+    """
+    A function to get the current scan calibration parameters
+
+    ...
+
+    Attributes
+    ----------
+    config : ConfigParser
+        An object with the functionalities of the configparser module
+
+    imfile : str
+        The name of the image file, the file containing the scanned image of the dose distribution, the calibration strip and the base strip in TIFF format.
+
+    base : 1D numpy array
+        Array containing the calculated base values for every color channel
+
+    Returns
+    -------
+    caldf : pandas DataFrame
+        The current scan calibration parameters
+
+    """
+
+    # Read the calculated calibration absorbed dose distributiom (PDD)
+    pddcalibfile = config['Calibration']['Path'] + config['Calibration']['File']
+    cdf = pd.read_excel(pddcalibfile)
+
+    # Read the calibration image segment data
+    calfilename = Path(imfile)
+    calfilename = calfilename.with_suffix('.Calibration.tif')
+    cim = imread(calfilename)
+
+    # Denoise
+    dcim = nlmf(imfile=calfilename, config=config)
+
+    # Calculate spatial coordinates
+    with TiffFile(imfile) as tif:
+        page_tags = tif.pages[0].tags
+    xres = page_tags['XResolution'].value
+    dpi = xres[0]/xres[1]
+    zres = 2.54/dpi
+    zv = np.arange(0, (cim.shape[0]+0.5)*zres, zres)
+
+    # Depth dose distribution in digital signal units
+    dch, dcw, _chanels = dcim.shape
+    cdd = profile_line(dcim, src=(0, dcw/2), dst=(dch, dcw/2), linewidth=20)
+
+    # Depth dose distribution in optical density units
+    ddf = pd.DataFrame({'z': zv, 'dr' : np.log10(2**16/cdd[:,0]), 'dg' : np.log10(2**16/cdd[:,1]), 'db' : np.log10(2**16/cdd[:,2])})
+    ddf.replace([np.inf, -np.inf], np.nan, inplace=True)
+    ddf.dropna(inplace=True)
+
+    # Resampling to the used ratiotherapy planning system spatial resolution
+    zsh, zmin, zmax = float(config['Calibration']['shift']), float(config['Calibration']['depthmin']), float(config['Calibration']['depthmax'])
+
+    # Interpolation functions
+    rddf = interp1d(ddf.z + zsh, ddf.dr, bounds_error=False)
+    gddf = interp1d(ddf.z + zsh, ddf.dg, bounds_error=False)
+    bddf = interp1d(ddf.z + zsh, ddf.db, bounds_error=False)
+
+    # Add to the calibration DataFrame the optical density corresponding to the radiotherapy planning system data points
+    cdf['dr'] = rddf(cdf.z)
+    cdf['dg'] = gddf(cdf.z)
+    cdf['db'] = bddf(cdf.z)
+
+    # Filter the calibration relevant depths
+    cdf = cdf.loc[(cdf.z > zmin) & (cdf.z < zmax)]
+
+    # Drop NA values
+    cdf.dropna(inplace=True)
+
+    # Read the standard calibration parameters (multiphse model)
+    configpath = config['DEFAULT']['configpath']
+    modelsfile = config['Models']['File']
+    modelsheet = config['Models']['mphSheet']
+    caldf = pd.read_excel(configpath + modelsfile, sheet_name=modelsheet)
+    caldf.set_index('Unnamed: 0', inplace=True)
+    caldf.index.names = ['ch']
+
+    # Read the standard calibration parameters (rational model)
+    modelsheet = config['Models']['racSheet']
+    racdf = pd.read_excel(configpath + modelsfile, sheet_name=modelsheet)
+    racdf.set_index('Unnamed: 0', inplace=True)
+    racdf.index.names = ['ch']
+
+    # Extract every color channel parameters
+    # Multiphase
+    rcalps = caldf.iloc[0].values
+    gcalps = caldf.iloc[1].values
+    bcalps = caldf.iloc[2].values
+    # Rational
+    rracps = racdf.iloc[0].values
+    gracps = racdf.iloc[1].values
+    bracps = racdf.iloc[2].values
+
+    # Calibration models for every channel
+    rcalfmodel = Model(calf)
+    gcalfmodel = Model(calf)
+    bcalfmodel = Model(calf)
+
+    # Parameter initialization
+    # Red
+    rcalfparams = rcalfmodel.make_params(
+        f = base[0],
+        phir = rcalps[1],
+        kr = rcalps[2],
+        phib = rcalps[3],
+        kb = rcalps[4]
+    )
+
+    rcalfparams['f'].vary = False
+    rcalfparams['phir'].min = 0
+    rcalfparams['kr'].vary = False
+    rcalfparams['phib'].min = 0
+    rcalfparams['kb'].vary = False
+
+    # Green
+    gcalfparams = gcalfmodel.make_params(
+        f = base[1],
+        phir = gcalps[1],
+        kr = gcalps[2],
+        phib = gcalps[3],
+        kb = gcalps[4],
+    )
+
+    gcalfparams['f'].vary = False
+    gcalfparams['phir'].min = 0
+    gcalfparams['kr'].vary = False
+    gcalfparams['phib'].min = 0
+    gcalfparams['kb'].vary = False
+
+    # Blue
+    bcalfparams = bcalfmodel.make_params(
+        f = base[2],
+        phir = bcalps[1],
+        kr = bcalps[2],
+        phib = bcalps[3],
+        kb = gcalps[4],
+    )
+
+    bcalfparams['f'].vary = False
+    bcalfparams['phir'].min = 0
+    bcalfparams['kr'].vary = False
+    bcalfparams['phib'].min = 0
+    bcalfparams['kb'].vary = False
+
+    # Fit
+    rcalfresult = rcalfmodel.fit(cdf.dr, rcalfparams, D = cdf.D)
+    gcalfresult = gcalfmodel.fit(cdf.dg, gcalfparams, D = cdf.D)
+    bcalfresult = bcalfmodel.fit(cdf.db, bcalfparams, D = cdf.D)
+
+    # Parameter reorganization
+    caldf = pd.DataFrame({'f' : base[0], 'phir' : rcalfresult.params.get('phir').value, 'kr' : rcalps[2], 'phib' : rcalfresult.params.get('phib').value, 'kb' : rcalps[4]}, index=['R'])
+    tcaldf = pd.DataFrame({'f' : base[1], 'phir' : gcalfresult.params.get('phir').value, 'kr' : gcalps[2], 'phib' : gcalfresult.params.get('phib').value, 'kb' : gcalps[4]}, index=['G'])
+    caldf = pd.concat([caldf, tcaldf])
+    tcaldf = pd.DataFrame({'f' : base[2], 'phir' : bcalfresult.params.get('phir').value, 'kr' : bcalps[2], 'phib' : bcalfresult.params.get('phib').value, 'kb' : bcalps[4]}, index=['B'])
+    caldf = pd.concat([caldf, tcaldf])
+
+    # Return the current scan calibration parameter DataFrmme
+    return caldf
+
+def mphspcnlmprocf_multiprocessing(imfile=None, config=None, caldf=None, ccdf=None):
+    """
+    A function to preprocess the dose distribution image using nonlocal means denoising and the multiphase calibration model with spatial correction
+
+    ...
+
+    Attributes
+    ----------
+    imfile : str
+        The name of the image file, the file containing the scanned image of the dose distribution, the calibration strip and the base strip in TIFF format.
+
+    config : ConfigParser
+        An object with the functionalities of the configparser module
+
+    caldf : pandas DataFrame
+        The current scan calibration parameters
+
+    ccdf : pandas DataFrame
+        A data structure containing the relevant geometric parameters for the spatial correction
+
+    Returns
+    -------
+    mphspcnlmprocim : 2D numpy arrray
+        The dose distribution
+    """
+    print('Dose preprocessing...')
+
+    dosefilename = Path(imfile)
+    dosefilename = dosefilename.with_suffix('.Film.tif')
+
+    # Denoise
+    udim = nlmf(dosefilename, config)
+
+    # Optical density image
+    dim = np.log10(2**16/(udim+0.0000001))
+
+    # Current multiphase calibration parameters
+    rcalps = caldf.iloc[0].values
+    gcalps = caldf.iloc[1].values
+    bcalps = caldf.iloc[2].values
+
+    # Spatial correction functions
+    recadc = np.load(config['Models']['oadcFile'], allow_pickle=True)
+    phiRrf = recadc[0, 0].item()
+    phiGrf = recadc[0, 1].item()
+    phiBrf = recadc[0, 2].item()
+    phiRbf = recadc[1, 0].item()
+    phiGbf = recadc[1, 1].item()
+    phiBbf = recadc[1, 2].item()
+
+    # Rational approximation
+
+    # Define models
+    rratfmodel = Model(iratf)
+    gratfmodel = Model(iratf)
+    bratfmodel = Model(iratf)
+
+    # Initialize parameters
+    rratparams = rratfmodel.make_params(
+        a = 0.1,
+        b = 0.1,
+        c = 0.1
+    )
+
+    gratparams = gratfmodel.make_params(
+        a = 0.1,
+        b = 0.1,
+        c = 0.1
+    )
+
+    bratparams = bratfmodel.make_params(
+        a = 0.1,
+        b = 0.1,
+        c = 0.1
+    )
+
+
+    # Generate calibration points
+
+    vDrat = np.array([0.5, 0.75, 1., 1.25, 1.5, 2., 3., 4., 5., 7., 9.])
+
+    vdrrat =  calf(vDrat, *rcalps)
+    vdgrat =  calf(vDrat, *gcalps)
+    vdbrat =  calf(vDrat, *bcalps)
+
+    # Fit
+    rratfit = rratfmodel.fit(data=vDrat, params=rratparams, d=vdrrat)
+    gratfit = gratfmodel.fit(data=vDrat, params=gratparams, d=vdgrat)
+    bratfit = bratfmodel.fit(data=vDrat, params=bratparams, d=vdbrat)
+
+    # Rational calibration paramters
+    rratps = np.array([k.value for k in rratfit.params.values()])
+    gratps = np.array([k.value for k in gratfit.params.values()])
+    bratps = np.array([k.value for k in bratfit.params.values()])
+
+
+    print('Dose calculation:')
+    DimcolsList = []
+    dimcols = [dim[:, y, :] for y in np.arange(dim.shape[1])]
+    xc = np.abs(ccdf.o - ccdf.c) * ccdf.s / 25.4
+    xl = [np.abs(ccdf.o - (ccdf.p0 + col)) * ccdf.s / 25.4 for col, dimcol in enumerate(dimcols)]
+    colsrcalps = np.array([rcalps * np.array([1, phiRrf(x)/phiRrf(xc), 1, phiRbf(x)/phiRbf(xc), 1]) for x in xl], dtype=object)
+    colsgcalps = np.array([gcalps * np.array([1, phiGrf(x)/phiGrf(xc), 1, phiGbf(x)/phiGbf(xc), 1]) for x in xl], dtype=object)
+    colsbcalps = np.array([bcalps * np.array([1, phiBrf(x)/phiBrf(xc), 1, phiBbf(x)/phiBbf(xc), 1]) for x in xl], dtype=object)
+
+    with Pool(None) as p:
+        Dim = np.array(
+            list(
+                tqdm(
+                    p.imap(wrapped_colDoseCalculationMphspcnlmprocf,
+                              [[dimcol,
+                                colsrcalps[col], colsgcalps[col], colsbcalps[col],
+                                rratps, gratps, bratps] for col, dimcol in enumerate(dimcols)]
+                    ), total=len(dimcols)
+                )
+            )
+        )
+    return Dim
