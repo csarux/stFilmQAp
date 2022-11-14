@@ -63,4 +63,4 @@ if dcmplan is not None:
 
     plandxf = fqa.dcm2dxf(dcmf=dcmf)
     if plandxf:
-        st.text('Exportado el archivo RT Dose en formato dxf: \n' + str(plandxf))
+        st.success('Exportado el archivo RT Dose en formato dxf: \n' + str(plandxf))

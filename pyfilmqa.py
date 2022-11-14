@@ -46,6 +46,12 @@ from scipy.optimize import minimize
 from scipy.optimize import fsolve
 # - Calibration models fits
 from lmfit import Parameters, Model
+# - Progress bar
+from stqdm import stqdm
+# - To pass additional parameters to map function
+from itertools import repeat
+# - Multiprocessing
+from multiprocessing import Pool
 
 
 # Funcion definitions
@@ -662,8 +668,6 @@ def mphspcnlmprocf_multiprocessing(imfile=None, config=None, caldf=None, ccdf=No
     mphspcnlmprocim : 2D numpy arrray
         The dose distribution
     """
-    print('Dose preprocessing...')
-
     dosefilename = Path(imfile)
     dosefilename = dosefilename.with_suffix('.Film.tif')
 
@@ -679,7 +683,8 @@ def mphspcnlmprocf_multiprocessing(imfile=None, config=None, caldf=None, ccdf=No
     bcalps = caldf.iloc[2].values
 
     # Spatial correction functions
-    recadc = np.load(config['Models']['oadcFile'], allow_pickle=True)
+    scfile = config['DEFAULT']['configpath']+config['Models']['oadcFile']
+    recadc = np.load(scfile, allow_pickle=True)
     phiRrf = recadc[0, 0].item()
     phiGrf = recadc[0, 1].item()
     phiBrf = recadc[0, 2].item()
@@ -743,15 +748,58 @@ def mphspcnlmprocf_multiprocessing(imfile=None, config=None, caldf=None, ccdf=No
     colsbcalps = np.array([bcalps * np.array([1, phiBrf(x)/phiBrf(xc), 1, phiBbf(x)/phiBbf(xc), 1]) for x in xl], dtype=object)
 
     with Pool(None) as p:
+        for i in stqdm(pool.imap(sleep_and_return, range(n_iterations)), total=n_iterations):
+            message.info(f'Iteration: {i}')
         Dim = np.array(
             list(
-                tqdm(
-                    p.imap(wrapped_colDoseCalculationMphspcnlmprocf,
+                stqdm(
+                     p.imap(wrapped_colDoseCalculationMphspcnlmprocf,
                               [[dimcol,
                                 colsrcalps[col], colsgcalps[col], colsbcalps[col],
                                 rratps, gratps, bratps] for col, dimcol in enumerate(dimcols)]
-                    ), total=len(dimcols)
+                     ), total=len(dimcols)
                 )
             )
         )
     return Dim
+
+def colDoseCalculationMphspcnlmprocf(parl):
+    """
+    A function to calculate the dose for every color channel in every pixel of a given colummn from the optical density image
+    It is an accessory function for multiprocessing. It should not be call outside the premphspcnlmprocf function.
+
+    ...
+
+    Attributes
+    ----------
+
+    Returns
+    -------
+    Dimcol : 2D numpy arrray
+        The column dose distribution for the three color channels
+    """
+
+    dimcol = parl[0]
+    colrcalps = parl[1]
+    colgcalps = parl[2]
+    colbcalps = parl[3]
+    rratps = parl[4]
+    gratps = parl[5]
+    bratps = parl[6]
+
+    Dimcol  = np.empty_like(dimcol)
+
+    for i in np.arange(len(dimcol)):
+        # Red channel
+        Dimcol[i, 0] = Ricalf(dimcol[i, 0], colrcalps, rratps)
+
+        # Green channel
+        Dimcol[i, 1] = Gicalf(dimcol[i, 1], colgcalps, gratps)
+
+        # Blue channel
+        Dimcol[i, 2] = Bicalf(dimcol[i, 2], colbcalps, bratps)
+
+    return Dimcol
+
+def wrapped_colDoseCalculationMphspcnlmprocf(parl):
+    return colDoseCalculationMphspcnlmprocf(parl)
