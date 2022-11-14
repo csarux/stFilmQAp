@@ -118,8 +118,8 @@ def run(img_dir, labels):
         # Calibración de la digitalización
         caldf=fqa.PDDCalibration(config=config, imfile=imfile, base=abase)
         # Determinación de la dosis en cada canal
-        fqa.mphspcnlmprocf_multiprocessing(imfile=imfile, config=config, caldf=caldf, ccdf=cdf)
-
+        Dim = fqa.mphspcnlmprocf_multiprocessing(imfile=imfile, config=config, caldf=caldf, ccdf=cdf)
+        Dim = fqa.postmphspcnlmprocf(Dim, config=config, planfile=st.session_state.dcmfname)    
 
     if rects:
         st.button(label="Process", on_click=process)

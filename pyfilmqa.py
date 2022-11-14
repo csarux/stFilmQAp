@@ -224,7 +224,7 @@ def dxfWriter(Data=None, dxfFileName='Film.dxf', AcqType='Acquired Portal', Pati
         # Write the data
         df.to_csv(dxf, sep='\t', header=False, index=False, float_format='%.2f')
 
-def dcm2dxf(dcmf=None):
+def dcm2dxf(dcmf=None, config=None):
     """
     A function to convert RT Dose DICOM files to dxf format
 
@@ -234,6 +234,10 @@ def dcm2dxf(dcmf=None):
     ----------
     dcmf : BytesIO
         The RT Dose DICOM data
+
+    config : ConfigParser
+        An object with the functionalities of the configparser module
+
 
      Returns
     -------
@@ -250,7 +254,7 @@ def dcm2dxf(dcmf=None):
     pxsp = dcmf.PixelSpacing
     imsz = [dcmf.Rows, dcmf.Columns]
     pDim = dcmf.pixel_array*dcmf.DoseGridScaling
-    dxffilePath = Path('/home/radiofisica/Shares/Radiofisica/Medidas Pacientes/IMRT/' + demodict['PatientId1'] + '/PlanStreamlit.dxf')
+    dxffilePath = Path(config['DEFAULT']['exportpath'] + demodict['PatientId1'] + '/PlanStreamlit.dxf')
     strDataOriginDateTime = datetime.strptime(dcmf.InstanceCreationDate + ' ' + dcmf.InstanceCreationTime, '%Y%m%d %H%M%S.%f').strftime('%m/%d/%Y, %H:%M:%S')
     dxfWriter(Data=pDim, dxfFileName=dxffilePath, DataOriginDateTime=strDataOriginDateTime,
               AcqType='Predicted Portal', PatientId1=demodict['PatientId1'],
@@ -481,6 +485,226 @@ def nlmf(imfile=None, config=None):
 
     return udim
 
+def iratf(d, a, b, c):
+    """
+    The calibration function following a sensitometric model bases in rational functions
+
+    ...
+
+    Attributes
+    ----------
+    d : float64
+        Optical density as measured by the scanner
+
+    a : float64
+        First rational function parameter
+
+    b : float64
+        Second rational function parameter
+
+    c : float64
+        Third rational function parameter
+
+    Returns
+    -------
+    D : float64
+        The abosrbed dose D corresponding to the optical density d in each channel following the sensitometry model based on rational functions
+
+    """
+
+    return (a - c * 10**-d)/(10**-d - b)
+
+def readCalParms(config=None):
+    """
+    A function to read the established standard calibration parameters for the EBT3 film measured by the Microtek 1000 XL scanner
+
+    ...
+
+    Attributes
+    ----------
+    config : ConfigParser
+        An object with the functionalities of the configparser module
+
+    Returns
+    -------
+    caldf : DataFrame
+        A pandas DataFrame with the calibration parameters for every color channel (multiphase model)
+
+    """
+
+    configpath = config['DEFAULT']['configpath']
+    modelsfile = config['Models']['File']
+    modelsheet = config['Models']['mphSheet']
+
+    caldf = pd.read_excel(configpath + modelsfile, sheet_name=modelsheet)
+    caldf.set_index('Unnamed: 0', inplace=True)
+    caldf.index.names = ['ch']
+    return caldf
+
+def readRatParms(config=None):
+    """
+    A function to read a standard calibration set of parameters following the rational model for the EBT3 film measured by the Microtek 1000 XL scanner
+
+    ...
+
+    Attributes
+    ----------
+    config : ConfigParser
+        An object with the functionalities of the configparser module
+
+    Returns
+    -------
+    ratdf : DataFrame
+        A pandas DataFrame with the calibration parameters for every color channel (rational model)
+
+    """
+
+    configpath = config['DEFAULT']['configpath']
+    modelsfile = config['Models']['File']
+    modelsheet = config['Models']['racSheet']
+    ratdf = pd.read_excel(configpath + modelsfile, sheet_name=modelsheet)
+    ratdf.set_index('Unnamed: 0', inplace=True)
+    ratdf.index.names = ['ch']
+    return ratdf
+
+def rootcalf(D, d, f, phir, kr, phib, kb):
+    """
+    An internal module use function.
+    It expresses the nonlinear equation to get the absorbed dose D from the optical density d using the multiphase model
+
+    ...
+
+
+    Returns
+    -------
+    rootcalf : float64
+        The difference between the measured optical density d and the optical density as calculated for the multiphase model for the absorbed dose D
+
+    """
+
+    return d - calf(D, f, phir, kr, phib, kb)
+
+def icalf(d, Dsem, f, phir, kr, phib, kb):
+    """
+    The calibration function following the multiphase model
+
+    ...
+
+    Attributes
+    ----------
+    d : float64
+        The measured optical density
+    Dsem : float64
+        A seed value of the absorbed D to solve the nonlinear equation
+    f : float64
+        The base optical density
+
+    phir : float64
+        The relative abundance of the red phase polymer
+
+    kr : float64
+        The exponent in the saturation term of the red phase polymer
+
+    phib : float64
+        The relative abundance of the blue phase polymer
+
+    kb : float64
+        The exponent in the saturation term of the blue phase polymer
+
+    Returns
+    -------
+    D : float64
+        The calculated absorbed dose D corresponding to the measured optical density d
+
+    """
+
+    return fsolve(rootcalf, Dsem, (d, *[f, phir,  kr, phib, kb]))[0]
+
+def Ricalf(d, rcalps, rratps):
+    """
+    The calibration function following the multiphase model for the red channel
+
+    ...
+
+    Attributes
+    ----------
+    d : float64
+        The measured optical density
+
+    rcalps : 1D numpy array
+        The current scan calibration parameters for the red channel
+
+    rratps : 1D numpy array
+        The current scan calibration rational approximation for the red channel
+
+    Returns
+    -------
+    D : float64
+        The calculated absorbed dose D corresponding to the measured optical density d for the red channel
+
+    """
+    return icalf(d, iratf(d, *rratps), *rcalps)
+
+Ricalfv = np.vectorize(Ricalf, excluded={1, 2})
+
+def Gicalf(d, gcalps, gratps):
+    """
+    The calibration function following the multiphase model for the green channel
+
+    ...
+
+    Attributes
+    ----------
+    d : float64
+        The measured optical density
+
+    gcalps : 1D numpy array
+        The current scan calibration parameters for the green channel
+
+    gratps : 1D numpy array
+        The current scan calibration rational approximation for the green channel
+
+
+    Returns
+    -------
+    D : float64
+        The calculated absorbed dose D corresponding to the measured optical density d for the green channel
+
+    """
+
+    return icalf(d, iratf(d, *gratps), *gcalps)
+
+Gicalfv = np.vectorize(Gicalf, excluded={1, 2})
+
+def Bicalf(d, bcalps, bratps):
+    """
+    The calibration function following the multiphase model for the blue channel
+
+    ...
+
+    Attributes
+    ----------
+    d : float64
+        The measured optical density
+
+    bcalps : 1D numpy array
+        The current scan calibration parameters for the blue channel
+
+    bratps : 1D numpy array
+        The current scan calibration rational approximation for the blue channel
+
+
+    Returns
+    -------
+    D : float64
+        The calculated absorbed dose D corresponding to the measured optical density d for the blue channel
+
+    """
+
+    return icalf(d, iratf(d, *bratps), *bcalps)
+
+Bicalfv = np.vectorize(Bicalf, excluded={1, 2})
+
 def PDDCalibration(config=None, imfile=None, base=None):
     """
     A function to get the current scan calibration parameters
@@ -643,6 +867,253 @@ def PDDCalibration(config=None, imfile=None, base=None):
     # Return the current scan calibration parameter DataFrmme
     return caldf
 
+def mphspcnlmprocf(imfile=None, config=None, caldf=None, ccdf=None):
+    """
+    A function to process the dose distribution image using nonlocal means denoising and the multiphase calibration model with spatial correction
+
+    ...
+
+    Attributes
+    ----------
+    imfile : str
+        The name of the image file, the file containing the scanned image of the dose distribution, the calibration strip and the base strip in TIFF format.
+
+    config : ConfigParser
+        An object with the functionalities of the configparser module
+
+    caldf : pandas DataFrame
+        The current scan calibration parameters
+
+    ccdf : pandas DataFrame
+        A data structure containing the relevant geometric parameters for the spatial correction
+
+    Returns
+    -------
+    mphspcnlmprocim : 2D numpy arrray
+        The dose distribution
+    """
+
+    dosefilename = Path(imfile)
+    dosefilename = dosefilename.with_suffix('.Film.tif')
+
+    # Denoise
+    udim = nlmf(dosefilename, config)
+
+    # Optical density image
+    dim = np.log10(2**16/(udim+0.0000001))
+
+    # Current multiphase calibration parameters
+    rcalps = caldf.iloc[0].values
+    gcalps = caldf.iloc[1].values
+    bcalps = caldf.iloc[2].values
+
+    # Spatial correction functions
+    recadc = np.load(config['DEFAULT']['configpath'] + config['Models']['oadcFile'], allow_pickle=True)
+    phiRrf = recadc[0, 0].item()
+    phiGrf = recadc[0, 1].item()
+    phiBrf = recadc[0, 2].item()
+    phiRbf = recadc[1, 0].item()
+    phiGbf = recadc[1, 1].item()
+    phiBbf = recadc[1, 2].item()
+
+    # Rational approximation
+
+    # Define models
+    rratfmodel = Model(iratf)
+    gratfmodel = Model(iratf)
+    bratfmodel = Model(iratf)
+
+    # Initialize parameters
+    rratparams = rratfmodel.make_params(
+        a = 0.1,
+        b = 0.1,
+        c = 0.1
+    )
+
+    gratparams = gratfmodel.make_params(
+        a = 0.1,
+        b = 0.1,
+        c = 0.1
+    )
+
+    bratparams = bratfmodel.make_params(
+        a = 0.1,
+        b = 0.1,
+        c = 0.1
+    )
+
+
+    # Generate calibration points
+
+    vDrat = np.array([0.5, 0.75, 1., 1.25, 1.5, 2., 3., 4., 5., 7., 9.])
+
+    vdrrat =  calf(vDrat, *rcalps)
+    vdgrat =  calf(vDrat, *gcalps)
+    vdbrat =  calf(vDrat, *bcalps)
+
+    # Fit
+    rratfit = rratfmodel.fit(data=vDrat, params=rratparams, d=vdrrat)
+    gratfit = gratfmodel.fit(data=vDrat, params=gratparams, d=vdgrat)
+    bratfit = bratfmodel.fit(data=vDrat, params=bratparams, d=vdbrat)
+
+    # Rational calibration paramters
+    rratps = np.array([k.value for k in rratfit.params.values()])
+    gratps = np.array([k.value for k in gratfit.params.values()])
+    bratps = np.array([k.value for k in bratfit.params.values()])
+
+    # Dose calculation
+    adDr = np.zeros_like(dim[...,0])
+    adDg = np.zeros_like(dim[...,1])
+    adDb = np.zeros_like(dim[...,2])
+    nrs = dim.shape[1]
+    for j in stqdm(np.arange(nrs)):
+        xc = np.abs(ccdf.o - ccdf.c) * ccdf.s / 25.4
+        x = np.abs(ccdf.o - (ccdf.p0 + j)) * ccdf.s / 25.4
+        npx = dim.shape[0]
+        for i in np.arange(npx):
+
+            # Red channel
+            f, phir, kr, phib, kb = rcalps
+            rcalcps = np.array([f, phir * phiRrf(x)/phiRrf(xc), kr, phib * phiRbf(x)/phiRbf(xc), kb])
+            adDr[i, j] = Ricalf(dim[i, j, 0], rcalcps, rratps)
+
+            # Green channel
+            f, phir, kr, phib, kb = gcalps
+            gcalcps = np.array([f, phir * phiGrf(x)/phiGrf(xc), kr, phib * phiGbf(x)/phiGbf(xc), kb])
+            adDg[i, j] = Gicalf(dim[i, j, 1], gcalcps, rratps)
+
+            # Blue channel
+            f, phir, kr, phib, kb = bcalps
+            bcalcps = np.array([f, phir * phiBrf(x)/phiBrf(xc), kr, phib * phiBbf(x)/phiBbf(xc), kb])
+            adDb[i, j] = Bicalf(dim[i, j, 2], bcalcps, rratps)
+
+    Dmax = float(config['DosePlane']['Dmax'])
+    wr, wg, wb = float(config['NonLocalMeans']['wRed']), float(config['NonLocalMeans']['wGreen']), float(config['NonLocalMeans']['wBlue'])
+    wT = wr + wg + wb
+
+    mphspcnlmprocim = (wr*adDr + wg*adDg + wb*adDb)/wT
+
+    mphspcnlmprocim = np.nan_to_num(mphspcnlmprocim, posinf=1e10, neginf=-1e10)
+
+    mphspcnlmprocim[mphspcnlmprocim < 0] = 0
+
+    mphspcnlmprocim[mphspcnlmprocim > Dmax] = Dmax
+
+    # Return the dose image
+    return mphspcnlmprocim
+
+def premphspcnlmprocf(imfile=None, config=None, caldf=None, ccdf=None):
+    """
+    A function to preprocess the dose distribution image using nonlocal means denoising and the multiphase calibration model with spatial correction
+
+    ...
+
+    Attributes
+    ----------
+    imfile : str
+        The name of the image file, the file containing the scanned image of the dose distribution, the calibration strip and the base strip in TIFF format.
+
+    config : ConfigParser
+        An object with the functionalities of the configparser module
+
+    caldf : pandas DataFrame
+        The current scan calibration parameters
+
+    ccdf : pandas DataFrame
+        A data structure containing the relevant geometric parameters for the spatial correction
+
+    Returns
+    -------
+    mphspcnlmprocim : 2D numpy arrray
+        The dose distribution
+    """
+    dosefilename = Path(imfile)
+    dosefilename = dosefilename.with_suffix('.Film.tif')
+
+    # Denoise
+    udim = nlmf(dosefilename, config)
+
+    # Optical density image
+    dim = np.log10(2**16/(udim+0.0000001))
+
+    # Current multiphase calibration parameters
+    rcalps = caldf.iloc[0].values
+    gcalps = caldf.iloc[1].values
+    bcalps = caldf.iloc[2].values
+
+    # Spatial correction functions
+    recadc = np.load(config['DEFAULT']['configpath'] + config['Models']['oadcFile'], allow_pickle=True)
+    phiRrf = recadc[0, 0].item()
+    phiGrf = recadc[0, 1].item()
+    phiBrf = recadc[0, 2].item()
+    phiRbf = recadc[1, 0].item()
+    phiGbf = recadc[1, 1].item()
+    phiBbf = recadc[1, 2].item()
+
+    # Rational approximation
+
+    # Define models
+    rratfmodel = Model(iratf)
+    gratfmodel = Model(iratf)
+    bratfmodel = Model(iratf)
+
+    # Initialize parameters
+    rratparams = rratfmodel.make_params(
+        a = 0.1,
+        b = 0.1,
+        c = 0.1
+    )
+
+    gratparams = gratfmodel.make_params(
+        a = 0.1,
+        b = 0.1,
+        c = 0.1
+    )
+
+    bratparams = bratfmodel.make_params(
+        a = 0.1,
+        b = 0.1,
+        c = 0.1
+    )
+
+
+    # Generate calibration points
+
+    vDrat = np.array([0.5, 0.75, 1., 1.25, 1.5, 2., 3., 4., 5., 7., 9.])
+
+    vdrrat =  calf(vDrat, *rcalps)
+    vdgrat =  calf(vDrat, *gcalps)
+    vdbrat =  calf(vDrat, *bcalps)
+
+    # Fit
+    rratfit = rratfmodel.fit(data=vDrat, params=rratparams, d=vdrrat)
+    gratfit = gratfmodel.fit(data=vDrat, params=gratparams, d=vdgrat)
+    bratfit = bratfmodel.fit(data=vDrat, params=bratparams, d=vdbrat)
+
+    # Rational calibration paramters
+    rratps = np.array([k.value for k in rratfit.params.values()])
+    gratps = np.array([k.value for k in gratfit.params.values()])
+    bratps = np.array([k.value for k in bratfit.params.values()])
+
+    DimcolsList = []
+    dimcols = [dim[:, y, :] for y in np.arange(dim.shape[1])]
+    xc = np.abs(ccdf.o - ccdf.c) * ccdf.s / 25.4
+
+    Dim = np.array(
+        list(
+            tqdm(
+                map(wrapped_colDoseCalculationMphspcnlmprocf,
+                    [
+                        [col, dimcol, ccdf, xc, rcalps, gcalps, bcalps,
+                        phiRrf, phiRbf, phiGrf, phiGbf, phiBrf, phiBbf,
+                        rratps, gratps, bratps] for col, dimcol in enumerate(dimcols)
+                    ]
+                ), total=len(dimcols)
+            )
+        )
+    )
+    return Dim
+
 def mphspcnlmprocf_multiprocessing(imfile=None, config=None, caldf=None, ccdf=None):
     """
     A function to preprocess the dose distribution image using nonlocal means denoising and the multiphase calibration model with spatial correction
@@ -738,7 +1209,6 @@ def mphspcnlmprocf_multiprocessing(imfile=None, config=None, caldf=None, ccdf=No
     bratps = np.array([k.value for k in bratfit.params.values()])
 
 
-    print('Dose calculation:')
     DimcolsList = []
     dimcols = [dim[:, y, :] for y in np.arange(dim.shape[1])]
     xc = np.abs(ccdf.o - ccdf.c) * ccdf.s / 25.4
@@ -748,8 +1218,6 @@ def mphspcnlmprocf_multiprocessing(imfile=None, config=None, caldf=None, ccdf=No
     colsbcalps = np.array([bcalps * np.array([1, phiBrf(x)/phiBrf(xc), 1, phiBbf(x)/phiBbf(xc), 1]) for x in xl], dtype=object)
 
     with Pool(None) as p:
-        for i in stqdm(pool.imap(sleep_and_return, range(n_iterations)), total=n_iterations):
-            message.info(f'Iteration: {i}')
         Dim = np.array(
             list(
                 stqdm(
@@ -803,3 +1271,44 @@ def colDoseCalculationMphspcnlmprocf(parl):
 
 def wrapped_colDoseCalculationMphspcnlmprocf(parl):
     return colDoseCalculationMphspcnlmprocf(parl)
+
+def postmphspcnlmprocf(Dim=None, config=None, planfile=''):
+    """
+    Postprocessing the dose distribution image
+
+    ...
+
+    Attributes
+    ----------
+    Dim : 3D numpy array
+        A numpy array with the image dose from every color channel
+
+    config : ConfigParser
+        An object with the functionalities of the configparser module
+
+    planfile: string
+        The name of the DICOM file with the calculated dose distribution
+
+    Returns
+    -------
+    mphspcnlmprocim : 2D numpy arrray
+        The dose distribution
+    """
+    Dmax = float(config['DosePlane']['Dmax'])
+    if planfile != '':
+        pDim = DICOMDose(planfile)
+        Dmax = 1.1 * pDim.max()
+
+    wr, wg, wb = float(config['NonLocalMeans']['wRed']), float(config['NonLocalMeans']['wGreen']), float(config['NonLocalMeans']['wBlue'])
+    wT = wr + wg + wb
+
+    mphspcnlmprocim = (wr*Dim[..., 0] + wg*Dim[..., 1] + wb*Dim[..., 2])/wT
+
+    mphspcnlmprocim = np.nan_to_num(mphspcnlmprocim, posinf=1e10, neginf=-1e10)
+
+    mphspcnlmprocim[mphspcnlmprocim < 0] = 0
+
+    mphspcnlmprocim[mphspcnlmprocim > Dmax] = Dmax
+
+    # Return the dose image
+    return mphspcnlmprocim

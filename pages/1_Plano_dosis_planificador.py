@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import seaborn as sns
 import pyfilmqa as fqa
+# - Config file
+import configparser
 
 st.title('1. Procesar el plano de dosis calculado en el planificador')
 
@@ -15,6 +17,14 @@ dcmplan = st.file_uploader('Archivo DICOM de dosis:', help='Seleccionar el archi
 if dcmplan is not None:
     # Leer el fichero DICOM
     dcmf = dicom.read_file(dcmplan)
+
+    if 'dcmfname' not in st.session_state:
+        st.session_state.dcmfname = dcmplan.name
+
+    # Leer la configuración
+    config = configparser.ConfigParser()
+    configfile='config/filmQAp.config'
+    config.read(configfile)
 
     # Mostrar los datos del paciente
     apellidos, nombre = str(dcmf.PatientName).split('^')
@@ -61,6 +71,6 @@ if dcmplan is not None:
 
     st.pyplot(fig)
 
-    plandxf = fqa.dcm2dxf(dcmf=dcmf)
+    plandxf = fqa.dcm2dxf(dcmf=dcmf, config=config)
     if plandxf:
         st.success('Exportado el archivo RT Dose en formato dxf: \n' + str(plandxf))
