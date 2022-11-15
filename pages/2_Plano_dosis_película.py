@@ -119,7 +119,15 @@ def run(img_dir, labels):
         caldf=fqa.PDDCalibration(config=config, imfile=imfile, base=abase)
         # Determinación de la dosis en cada canal
         Dim = fqa.mphspcnlmprocf_multiprocessing(imfile=imfile, config=config, caldf=caldf, ccdf=cdf)
-        Dim = fqa.postmphspcnlmprocf(Dim, config=config, planfile=st.session_state.dcmfname)    
+        if 'Dmax' in st.session_state:
+            st.session_state.fDim = fqa.postmphspcnlmprocf(Dim, config=config)
+            if 'fDim' in st.session_state:
+                fcols, frows, fchannels = Dim.shape
+                st.session_state.fcols = fcols
+                st.session_state.frows = frows
+                st.success('Convertida a dosis la información de la película.')
+        else:
+            st.error('Error: Plano de dosis calculado en el planificador no introducido, no es posible completar el postprocesado de la dosis medida por la película.')
 
     if rects:
         st.button(label="Process", on_click=process)

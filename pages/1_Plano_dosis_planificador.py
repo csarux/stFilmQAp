@@ -18,8 +18,8 @@ if dcmplan is not None:
     # Leer el fichero DICOM
     dcmf = dicom.read_file(dcmplan)
 
-    if 'dcmfname' not in st.session_state:
-        st.session_state.dcmfname = dcmplan.name
+    if 'Dmax' not in st.session_state:
+        st.session_state.Dmax = (dcmf.pixel_array*dcmf.DoseGridScaling).max() * 1.1
 
     # Leer la configuración
     config = configparser.ConfigParser()
@@ -59,6 +59,8 @@ if dcmplan is not None:
     Dy = np.arange(0, dcmf.Rows*dcmf.PixelSpacing[1], dcmf.PixelSpacing[1])
     Dim = dcmf.pixel_array * dcmf.DoseGridScaling
     Dosesdf = pd.DataFrame(data=Dim, index=Dy, columns=Dx)
+    if 'pDdf' not in st.session_state:
+        st.session_state.pDdf = Dosesdf
 
     fig, ax = plt.subplots()
     sns.heatmap(Dosesdf, cmap='jet', cbar_kws={'label': 'Dosis [Gy]'})

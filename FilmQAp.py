@@ -4,7 +4,9 @@ st.title('Dosimetría fotográfica con películas radiocrómicas')
 
 st.markdown(
 '''
-Aplicación para procesar películas radiocrómicas mediante un esquema de digitalización única (SSP, *single scan protocol*) leyéndose la película en la misma digitalización en la que se calibra el escáner. Si la película de calibración se ha irradido en la misma sesión que la película a medir, el procedimiento es independiente del tiempo de evolución de la película, evitando tener que esperar el tiempo de estabilización. El procesado utiliza un análisis multicanal mediante promedios no locales. La calibración se realiza mediante un modelo sensitométrico de crecimiento con la dosis de dos fases del polímero, válido para un modelo de escáner y película dados. Las condiciones particulares resultado del proceso de fabricación del lote, su conservación, el fondo y el estado del escáner se establecen durante la digitalización. El algoritmo corrige el efecto lateral.
+Aplicación para procesar películas radiocrómicas mediante un esquema de digitalización única (*SSP, single scan protocol*) leyéndose la película en la misma digitalización en la que se calibra el escáner. Si en un corto intervalo de tiempo se irradian las películas de medida y de calibración, el procedimiento es independiente del tiempo de evolución de la película, evitando tener que esperar el tiempo de estabilización. El procesado utiliza un análisis multicanal mediante promedios no locales. La calibración se realiza mediante un modelo sensitométrico de crecimiento con la dosis de dos fases del polímero presente en la capa sensible de la película. Las condiciones particulares que resultan del proceso de fabricación del lote, su conservación, el fondo y el estado del escáner se determinan en la digitalización. El algoritmo corrige el efecto lateral del escáner.
+
+La aplicación produce los archivos de dosis en formato `dxf` (formato de intercambio de Varian) que se pueden analizar mediante *Portal Dosimetry*.
 '''
 )
 

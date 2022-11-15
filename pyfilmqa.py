@@ -52,6 +52,8 @@ from stqdm import stqdm
 from itertools import repeat
 # - Multiprocessing
 from multiprocessing import Pool
+# - streamlit
+import streamlit as st
 
 
 # Funcion definitions
@@ -398,7 +400,7 @@ def segRegs(imfile=None, bbfile='tmp/bb.csv'):
     imfile : str
         The name of the image file, the file containing the scanned image of the dose distribution, the calibration strip and the base strip in TIFF format.
     bbfile : str
-        the name of the bounding box file, the file containing the position and size of the bounding boxes of the image file. It should be a csv file.
+        The name of the bounding box file, the file containing the position and size of the bounding boxes of the image file. It should be a csv file.
 
     Returns
     -------
@@ -1272,7 +1274,7 @@ def colDoseCalculationMphspcnlmprocf(parl):
 def wrapped_colDoseCalculationMphspcnlmprocf(parl):
     return colDoseCalculationMphspcnlmprocf(parl)
 
-def postmphspcnlmprocf(Dim=None, config=None, planfile=''):
+def postmphspcnlmprocf(Dim=None, config=None):
     """
     Postprocessing the dose distribution image
 
@@ -1286,18 +1288,15 @@ def postmphspcnlmprocf(Dim=None, config=None, planfile=''):
     config : ConfigParser
         An object with the functionalities of the configparser module
 
-    planfile: string
-        The name of the DICOM file with the calculated dose distribution
-
     Returns
     -------
     mphspcnlmprocim : 2D numpy arrray
         The dose distribution
+
     """
     Dmax = float(config['DosePlane']['Dmax'])
-    if planfile != '':
-        pDim = DICOMDose(planfile)
-        Dmax = 1.1 * pDim.max()
+    if 'Dmax' not in st.session_state:
+        Dmax = st.session_state.Dmax
 
     wr, wg, wb = float(config['NonLocalMeans']['wRed']), float(config['NonLocalMeans']['wGreen']), float(config['NonLocalMeans']['wBlue'])
     wT = wr + wg + wb
