@@ -389,6 +389,26 @@ def TIFFPixelSpacing(imfile=None):
     inch = 25.4 # mm
     return [inch/xdpi, inch/ydpi]
 
+def DoseImageSize(im=None):
+    """
+    A function to get the image size of the film measured dose distribution
+
+    ...
+
+    Attributes
+    ----------
+    im : 2D numpy array
+        The array containing the measured dose distribution
+
+     Returns
+    -------
+        imsz :  List
+        A list with the X and Y image size in pixels
+    """
+    imsz = [im.shape[1], im.shape[0]]
+    return imsz
+
+
 def segRegs(imfile=None, bbfile='tmp/bb.csv'):
     """
     A function to segment the film image
@@ -1295,7 +1315,7 @@ def postmphspcnlmprocf(Dim=None, config=None):
 
     """
     Dmax = float(config['DosePlane']['Dmax'])
-    if 'Dmax' not in st.session_state:
+    if 'Dmax' in st.session_state:
         Dmax = st.session_state.Dmax
 
     wr, wg, wb = float(config['NonLocalMeans']['wRed']), float(config['NonLocalMeans']['wGreen']), float(config['NonLocalMeans']['wBlue'])

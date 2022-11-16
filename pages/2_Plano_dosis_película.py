@@ -149,7 +149,7 @@ def run(img_dir, labels):
                 im.set_annotation(i, select_label)
 
 if __name__ == "__main__":
-    st.title('2. Procesar el plano de dosis medido mediante la película')
+    st.header('2. Procesar el plano de dosis medido mediante la película')
 
     scim = st.file_uploader('Digitalización de la película:', help='Seleccionar el archivo TIFF adquirido en el escáner.')
 
@@ -158,6 +158,9 @@ if __name__ == "__main__":
         lcscim = os.path.join("img_dir",scim.name)
         with open(lcscim,"wb") as f:
             f.write(scim.getbuffer())
+        # Crear un registro en el estado de la alicación con el nombre del archivo de imagen
+        if 'FilmFileName' not in st.session_state:
+            st.session_state.FilmFileName = scim.name
 
         # Guardar una copia local en formato png
         aim = imread(lcscim)

@@ -10,7 +10,7 @@ import pyfilmqa as fqa
 # - Config file
 import configparser
 
-st.title('1. Procesar el plano de dosis calculado en el planificador')
+st.header('1. Procesar el plano de dosis calculado en el planificador')
 
 dcmplan = st.file_uploader('Archivo DICOM de dosis:', help='Seleccionar el archivo DICOM exportado del planificador.')
 
@@ -18,6 +18,12 @@ if dcmplan is not None:
     # Leer el fichero DICOM
     dcmf = dicom.read_file(dcmplan)
 
+    if 'PatientId' not in st.session_state:
+        st.session_state.PatientId = dcmf.PatientID
+    if 'LastName' not in st.session_state:
+        st.session_state.LastName = str(dcmf.PatientName).split('^')[0]
+    if 'FirstName' not in st.session_state:
+        st.session_state.FirstName = str(dcmf.PatientName).split('^')[1]
     if 'Dmax' not in st.session_state:
         st.session_state.Dmax = (dcmf.pixel_array*dcmf.DoseGridScaling).max() * 1.1
 
