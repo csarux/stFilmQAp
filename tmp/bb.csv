@@ -1,5 +1,5 @@
-,left,top,width,height,label
-0,68,502,455,440,Film
-1,262,39,66,455,Calibration
-2,362,215,38,199,Background
-3,286,944,20,23,Center
+,left,width,top,height,label
+0,68,455,502,440,Film
+1,262,66,39,455,Calibration
+2,361,38,215,199,Background
+3,286,20,944,23,Center

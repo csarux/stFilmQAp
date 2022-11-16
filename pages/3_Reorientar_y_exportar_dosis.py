@@ -60,7 +60,7 @@ def tif2dxf(fDim=None):
                   AcqType='Acquired Portal', PatientId1=st.session_state.PatientId,
                   PatientId2=st.session_state.PatientId, LastName=st.session_state.LastName,
                   FirstName=st.session_state.FirstName, pxsp=pxsp, imsz=imsz)
-    st.success(config['DEFAULT']['exportpath'] + st.session_state.PatientId + '/StremlitFilm.dxf')
+    st.success('Exportada la dosis medida por la película en formato dxf: \n' + config['DEFAULT']['exportpath'] + st.session_state.PatientId + '/StremlitFilm.dxf')
 
 st.title('3. Reorientar y exportar la dosis medida por la película')
 
