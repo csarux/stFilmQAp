@@ -70,17 +70,15 @@ if 'pDdf' not in st.session_state:
     st.error('Error: Plano de dosis del planificador no importado.')
 else:
     col1, col2 = st.columns(2)
+    prgmax = float(st.session_state.pDdf.max(axis=1).max())
     with col1:
         st.subheader('Referencia del planificador')
+        pdmin, pdmax = st.slider(
+            'Rango de dosis representado',
+            0.0, prgmax*1.2, (0.0, prgmax))
         pfig, pax = plt.subplots()
-        sns.heatmap(st.session_state.pDdf, cmap='jet', xticklabels=False, yticklabels=False)
+        sns.heatmap(st.session_state.pDdf, cmap='jet', xticklabels=False, yticklabels=False, vmin=pdmin, vmax=pdmax)
         st.pyplot(pfig)
-    with col2:
-        rgmax = float(st.session_state.pDdf.max(axis=1).max())
-        dmin, dmax = st.slider(
-            'Select a range of values',
-            0.0, rgmax, (0.0, rgmax))
-        st.write()
 
 if 'fDim' not in st.session_state:
     st.error('Error: Plano de dosis de la película no procesado.')
@@ -91,51 +89,58 @@ else:
         fDim = np.array(st.session_state.fDim).reshape((st.session_state.fcols, st.session_state.frows))
         fDx = np.arange(st.session_state.fcols)
         fDy = np.arange(st.session_state.frows)
-
+        frgmax = float(fDim.max())
+        fdmin, fdmax = st.slider(
+            'Rango de dosis representado',
+            0.0, frgmax*1.1, (0.0, frgmax/1.1))
+    with col2:
+        dummy = 0
+    col1, col2 = st.columns(2)
+    with col1:
         st.button(label="Original", on_click=original, help=helpmsg)
         fDodf = pd.DataFrame(data=fDim, index=fDx, columns=fDy)
         fofig, foax = plt.subplots()
-        sns.heatmap(fDodf, cmap='jet', xticklabels=False, yticklabels=False)
+        sns.heatmap(fDodf, cmap='jet', xticklabels=False, yticklabels=False, vmin=fdmin, vmax=fdmax)
         st.pyplot(fofig)
 
         st.button(label="Rotar 90", on_click=rot90, help=helpmsg)
         fD90df = pd.DataFrame(data=np.rot90(fDim), index=fDy, columns=fDx)
         f90fig, f90ax = plt.subplots()
-        sns.heatmap(fD90df, cmap='jet', xticklabels=False, yticklabels=False)
+        sns.heatmap(fD90df, cmap='jet', xticklabels=False, yticklabels=False, vmin=fdmin, vmax=fdmax)
         st.pyplot(f90fig)
 
         st.button(label="Rotar 180", on_click=rot180, help=helpmsg)
         fD180df = pd.DataFrame(data=np.rot90(fDim, k=2), index=fDx, columns=fDy)
         f180fig, f180ax = plt.subplots()
-        sns.heatmap(fD180df, cmap='jet', xticklabels=False, yticklabels=False)
+        sns.heatmap(fD180df, cmap='jet', xticklabels=False, yticklabels=False, vmin=fdmin, vmax=fdmax)
         st.pyplot(f180fig)
 
         st.button(label="Rotar 270", on_click=rot180, help=helpmsg)
         fD270df = pd.DataFrame(data=np.rot90(fDim, k=3), index=fDy, columns=fDx)
         f270fig, f270ax = plt.subplots()
-        sns.heatmap(fD270df, cmap='jet', xticklabels=False, yticklabels=False)
+        sns.heatmap(fD270df, cmap='jet', xticklabels=False, yticklabels=False, vmin=fdmin, vmax=fdmax)
         st.pyplot(f270fig)
     with col2:
         st.button(label="Voltear", on_click=voltear, help=helpmsg)
         fDv90df = pd.DataFrame(data=np.fliplr(fDim), index=fDx, columns=fDy)
         fv90fig, fv90ax = plt.subplots()
-        sns.heatmap(fDv90df, cmap='jet', xticklabels=False, yticklabels=False)
+        sns.heatmap(fDv90df, cmap='jet', xticklabels=False, yticklabels=False, vmin=fdmin, vmax=fdmax)
         st.pyplot(fv90fig)
 
         st.button(label="Voltear y rotar 90", on_click=vrot90, help=helpmsg)
         fDv90df = pd.DataFrame(data=np.rot90(np.fliplr(fDim)), index=fDy, columns=fDx)
         fv90fig, fv90ax = plt.subplots()
-        sns.heatmap(fDv90df, cmap='jet', xticklabels=False, yticklabels=False)
+        sns.heatmap(fDv90df, cmap='jet', xticklabels=False, yticklabels=False, vmin=fdmin, vmax=fdmax)
         st.pyplot(fv90fig)
 
         st.button(label="Voltear y rotar 180", on_click=vrot180, help=helpmsg)
-        fDv180df = pd.DataFrame(data=np.rot90(fDim, k=2), index=fDx, columns=fDy)
+        fDv180df = pd.DataFrame(data=np.rot90(np.fliplr(fDim), k=2), index=fDx, columns=fDy)
         fv180fig, fv180ax = plt.subplots()
-        sns.heatmap(fDv180df, cmap='jet', xticklabels=False, yticklabels=False)
+        sns.heatmap(fDv180df, cmap='jet', xticklabels=False, yticklabels=False, vmin=fdmin, vmax=fdmax)
         st.pyplot(fv180fig)
 
         st.button(label="Voltear y rotar 270", on_click=vrot270, help=helpmsg)
-        fDv270df = pd.DataFrame(data=np.rot90(fDim, k=3), index=fDy, columns=fDx)
+        fDv270df = pd.DataFrame(data=np.rot90(np.fliplr(fDim), k=3), index=fDy, columns=fDx)
         fv270fig, fv270ax = plt.subplots()
-        sns.heatmap(fDv270df, cmap='jet', xticklabels=False, yticklabels=False)
+        sns.heatmap(fDv270df, cmap='jet', xticklabels=False, yticklabels=False, vmin=fdmin, vmax=fdmax)
         st.pyplot(fv270fig)
