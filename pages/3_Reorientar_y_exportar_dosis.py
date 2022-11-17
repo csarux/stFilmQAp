@@ -75,6 +75,12 @@ else:
         pfig, pax = plt.subplots()
         sns.heatmap(st.session_state.pDdf, cmap='jet', xticklabels=False, yticklabels=False)
         st.pyplot(pfig)
+    with col2:
+        rgmax = float(st.session_state.pDdf.max(axis=1).max())
+        dmin, dmax = st.slider(
+            'Select a range of values',
+            0.0, rgmax, (0.0, rgmax))
+        st.write()
 
 if 'fDim' not in st.session_state:
     st.error('Error: Plano de dosis de la película no procesado.')
