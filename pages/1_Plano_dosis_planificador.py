@@ -1,4 +1,3 @@
-import streamlit as st
 import pydicom as dicom
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -9,6 +8,8 @@ import seaborn as sns
 import pyfilmqa as fqa
 # - Config file
 import configparser
+import streamlit as st
+st.set_page_config(page_title='FilmQAp')
 
 st.header('1. Procesar el plano de dosis calculado en el planificador')
 

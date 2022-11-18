@@ -988,7 +988,7 @@ def mphspcnlmprocf(imfile=None, config=None, caldf=None, ccdf=None):
     adDg = np.zeros_like(dim[...,1])
     adDb = np.zeros_like(dim[...,2])
     nrs = dim.shape[1]
-    for j in stqdm(np.arange(nrs)):
+    for j in stqdm(np.arange(nrs), st_container=st.sidebar, desc='Procecesando la película:'):
         xc = np.abs(ccdf.o - ccdf.c) * ccdf.s / 25.4
         x = np.abs(ccdf.o - (ccdf.p0 + j)) * ccdf.s / 25.4
         npx = dim.shape[0]
@@ -1247,7 +1247,7 @@ def mphspcnlmprocf_multiprocessing(imfile=None, config=None, caldf=None, ccdf=No
                               [[dimcol,
                                 colsrcalps[col], colsgcalps[col], colsbcalps[col],
                                 rratps, gratps, bratps] for col, dimcol in enumerate(dimcols)]
-                     ), total=len(dimcols)
+                     ), total=len(dimcols), st_container=st.sidebar, desc='Procecesando la película:'
                 )
             )
         )

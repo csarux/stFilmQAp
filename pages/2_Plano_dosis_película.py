@@ -1,4 +1,3 @@
-import streamlit as st
 import os
 import pydicom as dicom
 import pandas as pd
@@ -15,6 +14,8 @@ from streamlit_img_label.manage import ImageManager, ImageDirManager
 from streamlit_img_label import st_img_label
 # - Config file
 import configparser
+import streamlit as st
+st.set_page_config(page_title='FilmQAp')
 
 
 def run(img_dir, labels):
@@ -130,7 +131,9 @@ def run(img_dir, labels):
             st.error('Error: Plano de dosis calculado en el planificador no introducido, no es posible completar el postprocesado de la dosis medida por la película.')
 
     if rects:
-        st.button(label="Process", on_click=process)
+        with st.sidebar:
+            st.button(label="Process", on_click=process)
+
         preview_imgs = im.init_annotation(rects)
 
         for i, prev_img in enumerate(preview_imgs):
