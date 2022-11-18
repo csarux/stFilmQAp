@@ -892,6 +892,110 @@ def PDDCalibration(config=None, imfile=None, base=None):
     # Return the current scan calibration parameter DataFrmme
     return caldf, cdf
 
+def validatecalibf(cda=None, config=None, caldf=None):
+    """
+    A function to validate de calibration parameters
+
+    ...
+
+    Attributes
+    ----------
+    cda : 3D numpy array
+        Optical density array from the calibration film. Each dimension correspond to one color channel
+
+    config : ConfigParser
+        An object with the functionalities of the configparser module
+
+    caldf : pandas DataFrame
+        The current scan calibration parameters
+
+    Returns
+    -------
+    validatecaliba : 1D numpy arrray
+        The array of doses predicted by the calibration model
+    """
+
+    # Current multiphase calibration parameters
+    rcalps = caldf.iloc[0].values
+    gcalps = caldf.iloc[1].values
+    bcalps = caldf.iloc[2].values
+
+    # Rational approximation
+
+    # Define models
+    rratfmodel = Model(iratf)
+    gratfmodel = Model(iratf)
+    bratfmodel = Model(iratf)
+
+    # Initialize parameters
+    rratparams = rratfmodel.make_params(
+        a = 0.1,
+        b = 0.1,
+        c = 0.1
+    )
+
+    gratparams = gratfmodel.make_params(
+        a = 0.1,
+        b = 0.1,
+        c = 0.1
+    )
+
+    bratparams = bratfmodel.make_params(
+        a = 0.1,
+        b = 0.1,
+        c = 0.1
+    )
+
+
+    # Generate calibration points
+
+    vDrat = np.array([0.5, 0.75, 1., 1.25, 1.5, 2., 3., 4., 5., 7., 9.])
+
+    vdrrat =  calf(vDrat, *rcalps)
+    vdgrat =  calf(vDrat, *gcalps)
+    vdbrat =  calf(vDrat, *bcalps)
+
+    # Fit
+    rratfit = rratfmodel.fit(data=vDrat, params=rratparams, d=vdrrat)
+    gratfit = gratfmodel.fit(data=vDrat, params=gratparams, d=vdgrat)
+    bratfit = bratfmodel.fit(data=vDrat, params=bratparams, d=vdbrat)
+
+    # Rational calibration paramters
+    rratps = np.array([k.value for k in rratfit.params.values()])
+    gratps = np.array([k.value for k in gratfit.params.values()])
+    bratps = np.array([k.value for k in bratfit.params.values()])
+
+    # Dose calculation
+    adDr = np.zeros_like(cda[...,0])
+    adDg = np.zeros_like(cda[...,1])
+    adDb = np.zeros_like(cda[...,2])
+    nrs = cda.shape[0]
+    for j in stqdm(np.arange(nrs), st_container=st.sidebar, desc='Validando la calibración:'):
+
+        # Red channel
+        adDr[j] = Ricalf(cda[j, 0], rcalps, rratps)
+
+        # Green channel
+        adDg[j] = Gicalf(cda[j, 1], gcalps, rratps)
+
+        # Blue channel
+        adDb[j] = Bicalf(cda[j, 2], bcalps, rratps)
+
+    Dmax = float(config['DosePlane']['Dmax'])
+    wr, wg, wb = float(config['NonLocalMeans']['wRed']), float(config['NonLocalMeans']['wGreen']), float(config['NonLocalMeans']['wBlue'])
+    wT = wr + wg + wb
+
+    validatecaliba = (wr*adDr + wg*adDg + wb*adDb)/wT
+
+    validatecaliba = np.nan_to_num(validatecaliba, posinf=1e10, neginf=-1e10)
+
+    validatecaliba[validatecaliba < 0] = 0
+
+    validatecaliba[validatecaliba > Dmax] = Dmax
+
+    # Return the dose array for validation purposes
+    return validatecaliba
+
 def mphspcnlmprocf(imfile=None, config=None, caldf=None, ccdf=None):
     """
     A function to process the dose distribution image using nonlocal means denoising and the multiphase calibration model with spatial correction
