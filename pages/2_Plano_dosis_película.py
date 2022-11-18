@@ -117,7 +117,12 @@ def run(img_dir, labels):
         # Determinación del fondo
         abase = fqa.baseDetermination(imfile=imfile, config=config)
         # Calibración de la digitalización
-        caldf=fqa.PDDCalibration(config=config, imfile=imfile, base=abase)
+        caldf, cddf = fqa.PDDCalibration(config=config, imfile=imfile, base=abase)
+        # Incorporar al estado de la aplicación
+        if caldf not in st.session_state:
+            st.session_state.caldf = caldf
+        if cdf not in st.session_state:
+            st.session_state.cddf = cddf
         # Determinación de la dosis en cada canal
         Dim = fqa.mphspcnlmprocf_multiprocessing(imfile=imfile, config=config, caldf=caldf, ccdf=cdf)
         if 'Dmax' in st.session_state:

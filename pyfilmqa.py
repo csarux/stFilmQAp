@@ -749,6 +749,9 @@ def PDDCalibration(config=None, imfile=None, base=None):
     caldf : pandas DataFrame
         The current scan calibration parameters
 
+    cdf : pandas dataframe
+        The calibration data from which caldf is obtained
+
     """
 
     # Read the calculated calibration absorbed dose distributiom (PDD)
@@ -887,7 +890,7 @@ def PDDCalibration(config=None, imfile=None, base=None):
     caldf = pd.concat([caldf, tcaldf])
 
     # Return the current scan calibration parameter DataFrmme
-    return caldf
+    return caldf, cdf
 
 def mphspcnlmprocf(imfile=None, config=None, caldf=None, ccdf=None):
     """
