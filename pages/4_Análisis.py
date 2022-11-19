@@ -37,7 +37,6 @@ fDrdf = pd.DataFrame(data=fDrim, index=py, columns=px)
 difim = cmpimgs(fDrim, pDim)
 difdf = pd.DataFrame(data=difim, index=py, columns=px)
 
-
 coll, colc, colr = st.columns(3)
 
 with coll:
@@ -76,4 +75,11 @@ with colr:
     ax.set_xlabel('x [mm]')
     ax.set_ylabel('y [mm]')
 
+    st.pyplot(fig)
+
+    fig, ax = plt.subplots()
+    sns.histplot(np.ravel(difdf.values))
+
+    ax.set_xlabel('Diferencia de dosis [Gy]')
+    ax.set_ylabel('Cuentas')
     st.pyplot(fig)
