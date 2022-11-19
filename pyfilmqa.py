@@ -752,6 +752,9 @@ def PDDCalibration(config=None, imfile=None, base=None):
     cdf : pandas dataframe
         The calibration data from which caldf is obtained
 
+    sips : float
+        Scanned image pixel size [mm]
+
     """
 
     # Read the calculated calibration absorbed dose distributiom (PDD)
@@ -772,6 +775,7 @@ def PDDCalibration(config=None, imfile=None, base=None):
     xres = page_tags['XResolution'].value
     dpi = xres[0]/xres[1]
     zres = 2.54/dpi
+    sips = zres
     zv = np.arange(0, (cim.shape[0]+0.5)*zres, zres)
 
     # Depth dose distribution in digital signal units
@@ -889,8 +893,8 @@ def PDDCalibration(config=None, imfile=None, base=None):
     tcaldf = pd.DataFrame({'f' : base[2], 'phir' : bcalfresult.params.get('phir').value, 'kr' : bcalps[2], 'phib' : bcalfresult.params.get('phib').value, 'kb' : bcalps[4]}, index=['B'])
     caldf = pd.concat([caldf, tcaldf])
 
-    # Return the current scan calibration parameter DataFrmme
-    return caldf, cdf
+    # Return the current scan calibration parameter DataFrmme, calibration dataframe and pixel size
+    return caldf, cdf, sips
 
 def validatecalibf(cda=None, config=None, caldf=None):
     """

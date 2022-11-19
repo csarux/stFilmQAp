@@ -36,3 +36,7 @@ for row in range(numrows):
                     if submitted:
                         with open(configfile, 'w') as cfgfile:
                             config.write(cfgfile)
+
+with st.sidebar:
+    st.file_uploader('Dosis de calibración:', help='Seleccionar el archivo de texto exportado del planificador.')
+#TODO Añadir la función que genere el archivo xlsx a partir de la información del planificador
