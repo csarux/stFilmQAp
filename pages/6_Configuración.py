@@ -4,7 +4,7 @@ from math import ceil
 import streamlit as st
 st.set_page_config(page_title='FilmQAp', layout="wide")
 
-st.title('5. Configuración')
+st.title('Configuración')
 
 config = configparser.ConfigParser(default_section=None)
 configfile='config/filmQAp.config'

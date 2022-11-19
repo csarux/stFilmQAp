@@ -121,7 +121,7 @@ def run(img_dir, labels):
         # Incorporar al estado de la aplicación
         if caldf not in st.session_state:
             st.session_state.caldf = caldf
-        if cdf not in st.session_state:
+        if cddf not in st.session_state:
             st.session_state.cddf = cddf
         # Determinación de la dosis en cada canal
         Dim = fqa.mphspcnlmprocf_multiprocessing(imfile=imfile, config=config, caldf=caldf, ccdf=cdf)

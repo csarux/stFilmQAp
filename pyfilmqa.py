@@ -792,9 +792,9 @@ def PDDCalibration(config=None, imfile=None, base=None):
     bddf = interp1d(ddf.z + zsh, ddf.db, bounds_error=False)
 
     # Add to the calibration DataFrame the optical density corresponding to the radiotherapy planning system data points
-    cdf['dr'] = rddf(cdf.z)
-    cdf['dg'] = gddf(cdf.z)
-    cdf['db'] = bddf(cdf.z)
+    cdf['dR'] = rddf(cdf.z)
+    cdf['dG'] = gddf(cdf.z)
+    cdf['dB'] = bddf(cdf.z)
 
     # Filter the calibration relevant depths
     cdf = cdf.loc[(cdf.z > zmin) & (cdf.z < zmax)]
@@ -878,9 +878,9 @@ def PDDCalibration(config=None, imfile=None, base=None):
     bcalfparams['kb'].vary = False
 
     # Fit
-    rcalfresult = rcalfmodel.fit(cdf.dr, rcalfparams, D = cdf.D)
-    gcalfresult = gcalfmodel.fit(cdf.dg, gcalfparams, D = cdf.D)
-    bcalfresult = bcalfmodel.fit(cdf.db, bcalfparams, D = cdf.D)
+    rcalfresult = rcalfmodel.fit(cdf.dR, rcalfparams, D = cdf.D)
+    gcalfresult = gcalfmodel.fit(cdf.dG, gcalfparams, D = cdf.D)
+    bcalfresult = bcalfmodel.fit(cdf.dB, bcalfparams, D = cdf.D)
 
     # Parameter reorganization
     caldf = pd.DataFrame({'f' : base[0], 'phir' : rcalfresult.params.get('phir').value, 'kr' : rcalps[2], 'phib' : rcalfresult.params.get('phib').value, 'kb' : rcalps[4]}, index=['R'])
