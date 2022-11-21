@@ -48,7 +48,7 @@ with st.sidebar:
         'Posición perfil y [mm]',
         floor(px.min()), floor(px.max()), floor((px.max() - px.min())*.5))
 
-coll, colc, colr = st.columns(3)
+coll, colc, colr = st.columns([3)
 
 with coll:
 
@@ -108,7 +108,7 @@ with colr:
     difa = np.ravel(difdf.values)
 
     fig, ax = plt.subplots()
-    sns.histplot(difa, binrange=(difa.min(), difa.max()))
+    sns.histplot(difa, binrange=(difa.min(), difa.max()), bins=30)
     ax.set_xlabel('Diferencia de dosis [Gy]')
     ax.set_ylabel('Cuentas')
     st.pyplot(fig)
