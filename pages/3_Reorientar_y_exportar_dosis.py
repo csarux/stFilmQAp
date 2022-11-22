@@ -12,54 +12,55 @@ st.set_page_config(page_title='FilmQAp', layout="wide")
 
 def original():
     fDim = np.array(st.session_state.fDim).reshape((st.session_state.fcols, st.session_state.frows))
-    st.session_state.fDim=fDim
     tif2dxf(fDim=fDim)
 
 def rot90():
     fDim = np.array(st.session_state.fDim).reshape((st.session_state.fcols, st.session_state.frows))
     fDim = np.rot90(fDim)
-    st.session_state.fDim=fDim
     tif2dxf(fDim=fDim)
 
 def rot180():
     fDim = np.array(st.session_state.fDim).reshape((st.session_state.fcols, st.session_state.frows))
     fDim = np.rot90(fDim, k=2)
-    st.session_state.fDim=fDim
     tif2dxf(fDim=fDim)
 
 def rot270():
     fDim = np.array(st.session_state.fDim).reshape((st.session_state.fcols, st.session_state.frows))
     fDim = np.rot90(fDim, k=3)
-    st.session_state.fDim=fDim
     tif2dxf(fDim=fDim)
 
 def voltear():
     fDim = np.array(st.session_state.fDim).reshape((st.session_state.fcols, st.session_state.frows))
     fDim = np.fliplr(fDim)
-    st.session_state.fDim=fDim
     tif2dxf(fDim=fDim)
 
 def vrot90():
     fDim = np.array(st.session_state.fDim).reshape((st.session_state.fcols, st.session_state.frows))
     fDim = np.rot90(np.fliplr(fDim))
-    st.session_state.fDim=fDim
     tif2dxf(fDim=fDim)
 
 def vrot180():
     fDim = np.array(st.session_state.fDim).reshape((st.session_state.fcols, st.session_state.frows))
     fDim = np.rot90(np.fliplr(fDim), k=2)
-    st.session_state.fDim=fDim
     tif2dxf(fDim=fDim)
 
 def vrot270():
     fDim = np.array(st.session_state.fDim).reshape((st.session_state.fcols, st.session_state.frows))
     fDim = np.rot90(np.fliplr(fDim), k=3)
-    st.session_state.fDim=fDim
     tif2dxf(fDim=fDim)
 
 def tif2dxf(fDim=None):
     pxsp = fqa.TIFFPixelSpacing(os.path.join("img_dir", st.session_state.FilmFileName))
     imsz = fqa.DoseImageSize(fDim)
+
+    if 'fDdf' not in st.session_state:
+        xa = np.linspace(0, imsz[0]*pxsp[0], imsz[0])
+        ya = np.linspace(0, imsz[1]*pxsp[1], imsz[1])
+        fDdf = pd.DataFrame(data=np.transpose(fDim), index=xa, columns=ya) # Impuesto por la forma que Eclipse interpreta la orientación de la imagen
+        st.session_state.fDdf = fDdf
+    if 'fps' not in st.session_state:
+        st.session_state.fps = pxsp
+
     config = configparser.ConfigParser()
     configfile='config/filmQAp.config'
     config.read(configfile)

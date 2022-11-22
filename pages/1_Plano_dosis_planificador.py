@@ -62,12 +62,16 @@ if dcmplan is not None:
 
     st.subheader('Plano de dosis')
 
-    Dx = np.arange(0, dcmf.Columns*dcmf.PixelSpacing[0], dcmf.PixelSpacing[0])
-    Dy = np.arange(0, dcmf.Rows*dcmf.PixelSpacing[1], dcmf.PixelSpacing[1])
+    Dx = np.linspace(0, dcmf.Columns*dcmf.PixelSpacing[0],dcmf.Columns)
+    Dy = np.linspace(0, dcmf.Rows*dcmf.PixelSpacing[1], dcmf.Rows)
     Dim = dcmf.pixel_array * dcmf.DoseGridScaling
     Dosesdf = pd.DataFrame(data=Dim, index=Dy, columns=Dx)
     if 'pDdf' not in st.session_state:
         st.session_state.pDdf = Dosesdf
+
+    if 'pps' not in st.session_state:
+        st.session_state.pps = dcmf.PixelSpacing
+
 
     fig, ax = plt.subplots()
     sns.heatmap(Dosesdf, cmap='jet', cbar_kws={'label': 'Dosis [Gy]'})

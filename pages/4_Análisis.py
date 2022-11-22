@@ -9,35 +9,45 @@ from scipy.interpolate import RectBivariateSpline as RBSp
 from skimage.transform import resize
 from math import ceil, floor
 from skimage.util import compare_images as cmpimgs
+from pymedphys import gamma
+import logging
 import streamlit as st
+
+dmax = 20 # Desplazamiento másximo permitido
+
+gamma_options = {
+    'dose_percent_threshold': 3,
+    'distance_mm_threshold': 3,
+    'lower_percent_dose_cutoff': 1,
+    'interp_fraction': 10,  # Should be 10 or more for more accurate results
+    'max_gamma': 2,
+    'random_subset': None,
+    'local_gamma': True,
+    'ram_available': 4**29,  # 1/2 GB
+}
+
+logger = logging.getLogger()
+logger.setLevel(logging.CRITICAL)
 
 st.set_page_config(page_title='FilmQAp', layout="wide")
 
 st.title('4. Análisis')
 
-config = configparser.ConfigParser()
-configfile='config/filmQAp.config'
-config.read(configfile)
+with st.sidebar:
+    method= st.radio('Comparación', ['blend', 'checkerboard', 'diff', 'gamma'], help='Modo de comparación entre las dos distribuciones de dosis')
+
+    dx = st.slider(
+        'Desplazamiento x [mm]',
+        -dmax, dmax, 0)
+
+    dy = st.slider(
+        'Desplazamiento y [mm]',
+        -dmax, dmax, 0)
 
 pDdf = st.session_state.pDdf
 px, py = pDdf.columns, pDdf.index
-pps = float(config['DosePlane']['pixelsize'])
+pps = st.session_state.pps
 pDim = pDdf.values
-
-fDim, fcols, frows, fps = st.session_state.fDim, st.session_state.fcols, st.session_state.frows, st.session_state.fps*10
-fDim = np.transpose(fDim)
-fx, fy = np.arange(0, fcols*fps-1e-6, fps), np.arange(0, frows*fps, fps)
-fDdf = pd.DataFrame(data=fDim, index=fy, columns=fx)
-frx, fry = np.arange(0, ceil(fx[-1]) * pps, pps), np.arange(0, ceil(fy[-1]) * pps, pps)
-fDrim = resize(fDim, (fry.shape[0], frx.shape[0]))
-fDrdf = pd.DataFrame(data=fDrim, index=fry, columns=frx)
-fDo = RBSp(fy, fx, fDim)
-yy, xx = np.meshgrid(py, px, sparse=True)
-fDrim = fDo.ev(yy, xx)
-fDrdf = pd.DataFrame(data=fDrim, index=py, columns=px)
-difim = cmpimgs(fDrim, pDim)
-difim = fDrim - pDim
-difdf = pd.DataFrame(data=difim, index=py, columns=px)
 
 with st.sidebar:
     pry = st.slider(
@@ -48,7 +58,26 @@ with st.sidebar:
         'Posición perfil y [mm]',
         floor(px.min()), floor(px.max()), floor((px.max() - px.min())*.5))
 
-coll, colc, colr = st.columns([3)
+fDdf = st.session_state.fDdf
+fx, fy = fDdf.columns, fDdf.index
+fps = st.session_state.fps
+fDim = fDdf.values
+
+fDo = RBSp(fy, fx, fDim)
+yy, xx = np.meshgrid(py, px, sparse=True)
+fDrim = fDo.ev(yy + dx, xx + dy)
+fDrim[fDrim < 0] = 0 # Acotar la dosis a valores positivos para evitar artefactos producidos en la extrapolación
+fDrdf = pd.DataFrame(data=fDrim, index=py, columns=px)
+if method in ['blend', 'checkerboard']:
+    cmpim = cmpimgs(fDrim, pDim, method=method)
+elif method is 'diff':
+    cmpim = fDrim - pDim
+elif method is 'gamma':
+    cmpim = gamma((px, py), pDim, (fy+dy, fx+dx), fDim, **gamma_options)
+
+cmpdf = pd.DataFrame(data=cmpim, index=py, columns=px)
+
+coll, colc, colr = st.columns([1, 1, 1])
 
 with coll:
 
@@ -66,18 +95,10 @@ with coll:
 
     st.pyplot(fig)
 
-    fig, ax = plt.subplots()
-    ax.plot(px, pDim[pry, :], '-', color='darkred')
-    ax.plot(py, fDrim[pry, :], '-', color='red')
-    ax.plot(px, pDim[:, prx], '-', color='darkgreen')
-    ax.plot(py, fDrim[:, prx], '-', color='green')
-
-    st.pyplot(fig)
-
 with colc:
 
     fig, ax = plt.subplots()
-    sns.heatmap(difdf, cmap='jet', cbar_kws={'label': 'Dosis [Gy]'})
+    sns.heatmap(cmpdf, cmap='jet', cbar_kws={'label': 'Dosis [Gy]'})
     ax.xaxis.set_major_locator(ticker.MultipleLocator(40))
     ax.xaxis.set_major_formatter(ticker.ScalarFormatter())
     ax.yaxis.set_major_locator(ticker.MultipleLocator(40))
@@ -105,10 +126,32 @@ with colr:
 
     st.pyplot(fig)
 
-    difa = np.ravel(difdf.values)
+coll, colr = st.columns(2)
+
+with coll:
+    fig, ax = plt.subplots()
+    ax.plot(px, pDim[pry, :], '-', color='darkred', label='Plan x')
+    ax.plot(py, fDrim[pry, :], '-', color='red', label='Film x')
+    ax.plot(px, pDim[:, prx], '-', color='darkgreen', label='Plan y')
+    ax.plot(py, fDrim[:, prx], '-', color='darkcyan', label='Film y')
+    ax.plot(prx, pDim[pry, prx], 'x', color='darkred', label='Plan {:.2f}'.format(pDim[pry, prx]))
+    ax.plot(prx, fDrim[pry, prx], 'o', color='red', label='Film {:.2f}'.format(fDrim[pry, prx]))
+    ax.plot(pry, pDim[pry, prx], 'x', color='darkgreen', label='Plan {:.2f}'.format(pDim[pry, prx]))
+    ax.plot(pry, fDrim[pry, prx], 'o', color='darkcyan', label='Film {:.2f}'.format(fDrim[pry, prx]))
+
+    ax.set_xlabel('x, y [mm]')
+    ax.set_ylabel('Dosis [Gy]')
+
+    ax.legend()
+
+    st.pyplot(fig)
+
+with colr:
+    cmpa = np.ravel(cmpdf.values)
 
     fig, ax = plt.subplots()
-    sns.histplot(difa, binrange=(difa.min(), difa.max()), bins=30)
+    sns.histplot(cmpa, binrange=(cmpa.min(), cmpa.max()), bins=30)
     ax.set_xlabel('Diferencia de dosis [Gy]')
     ax.set_ylabel('Cuentas')
-    st.pyplot(fig)
+    if method not in ['blend', 'checkerboard']:
+        st.pyplot(fig)
