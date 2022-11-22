@@ -22,7 +22,6 @@ with colc:
 
     st.subheader(' Cálculo del plano de dosis en el planificador')
 
-
     st.markdown(
     '''
     En Eclipse desde el plan que se quiere medir, seleccionar Create Verification Plan y seguir el procedimiento del planificador.
@@ -203,10 +202,50 @@ with colc:
 
     * **Fondo**: Región con un trozo de película sin irradiar
 
-    * **Centro**: Un área cuyo centro geométrico esté contenido en el eje de digitalización del escáner, definido por la línea que define el centro de la lámpara al avanzar durante la digitalización. La identificación de este eje es relevante para poder aplicar la correción por efecto lateral.
+    * **Centro**: Un área cuyo centro geométrico esté contenido en el eje de digitalización del escáner, entendido como la línea que define el centro de la lámpara al avanzar durante la digitalización. La identificación de este eje es relevante para poder aplicar la correción por efecto lateral.
 
-    `FilmQAp` muestra cuatro regiones predefinidas que corresponden a las cuatro zonas anteriores. Los bordes y la posiciones de las regiones son ajustables. La aplicación mantiene las dimensiones y posiciones del último análisis realizado.
+    `FilmQAp` muestra cuatro regiones predefinidas que corresponden a las cuatro zonas anteriores. Los bordes y las posiciones de las regiones son ajustables. La aplicación mantiene las dimensiones y posiciones del último análisis realizado.
+    '''
+    )
 
+    img = Image.open('Images/etiquetadoImagen.jpg')
+    st.image(img, caption='Segmentación de la imagen')
+
+    st.markdown(
+    '''
     Cada región se muestra de forma independiente en la parte inferior de la ventana junto con su etiqueta.
     '''
     )
+
+    img = Image.open('Images/imagenesRecortadas.jpg')
+    st.image(img, caption='Imágenes recortadas con sus etiquetas')
+
+    st.markdown(
+    '''
+    Cuando se han identificado correctamente las regiones relevantes pulsar el botón **Process** en la barra lateral.
+    '''
+    )
+
+    img = Image.open('Images/processButton.jpg')
+    st.image(img, caption='Botón para procesar la película', width=350)
+
+    st.markdown(
+    '''
+    Una barra de progreso indica el avance del procesado de la imagen y al final del mismo, si no se han producido errores, un mensaje indica que el proceso ha terminado con éxito.
+    '''
+    )
+
+    img = Image.open('Images/barraProgreso.jpg')
+    st.image(img, caption='Barra de progreso', width=350)
+
+    img = Image.open('Images/mensajeExito.jpg')
+    st.image(img, caption='Mensaje de éxito al final del procesado de la película')
+
+    st.markdown(
+    '''
+    Seleccionar en la barra lateral la opción **Reorientar y exportar la dosis**
+    '''
+    )
+
+    img = Image.open('Images/menuReorientarExportarDosis.jpg')
+    st.image(img, caption='Opción "Reorientar exportar dosis"')
