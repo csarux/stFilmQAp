@@ -163,13 +163,35 @@ with colr:
 
     fig, ax = plt.subplots()
     if method is 'gamma':
-        gamma1v = np.ravel(gamma1)
+        gamma1a = np.ravel(gamma1)
         sns.histplot(cmpa, binrange=(0, 2), bins=30, color='red')
-        sns.histplot(gamma1v, binrange=(0, 2), bins=30, ax=ax)
+        cmpacnts, bins = np.histogram(cmpa, range=(0, 2), bins=30)
+        sns.histplot(gamma1a, binrange=(0, 2), bins=30)
+        gamma1acnts, bins = np.histogram(gamma1a, range=(0, 2), bins=30)
+        gammaresult = gamma1acnts.sum() / cmpacnts.sum() * 100
+        ax.set_ylabel('Cuentas')
+        ax.set_xlabel('Índice gamma')
+        gammamsg = 'Puntos con $\gamma$ < 1: {:.2f}%'.format(gammaresult)
+        ax.text(0.65, 0.75, gammamsg,
+            horizontalalignment='center',
+            verticalalignment='center',
+            transform = ax.transAxes)
     elif method is 'diff':
         sns.histplot(cmpa, binrange=(np.nanmin(cmpa) * 0.5, np.nanmax(cmpa) * 0.5), bins=30)
+        ax.set_ylabel('Cuentas')
+        ax.set_xlabel('Diferencia de dosis [Gy]')
+        meandiff = cmpa.mean()
+        meanmsg = 'Diferencia media: {:.2f} Gy'.format(meandiff)
+        stddiff = cmpa.std()
+        stdmsg = 'Sigma diferencia: {:.2f} Gy'.format(stddiff)
+        ax.text(0.65, 0.90, meanmsg,
+            horizontalalignment='center',
+            verticalalignment='center',
+            transform = ax.transAxes)
+        ax.text(0.65, 0.85, stdmsg,
+            horizontalalignment='center',
+            verticalalignment='center',
+            transform = ax.transAxes)
 
-    ax.set_xlabel('Diferencia de dosis [Gy]')
-    ax.set_ylabel('Cuentas')
     if method not in ['blend', 'checkerboard']:
         st.pyplot(fig)
