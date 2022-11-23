@@ -54,9 +54,9 @@ def tif2dxf(fDim=None):
     imsz = fqa.DoseImageSize(fDim)
 
     if 'fDdf' not in st.session_state:
-        xa = np.linspace(0, imsz[0]*pxsp[0], imsz[0])
-        ya = np.linspace(0, imsz[1]*pxsp[1], imsz[1])
-        fDdf = pd.DataFrame(data=np.transpose(fDim), index=xa, columns=ya) # Impuesto por la forma que Eclipse interpreta la orientación de la imagen
+        ya = np.linspace(0, (imsz[0]-1)*pxsp[0], imsz[0])
+        xa = np.linspace(0, (imsz[1]-1)*pxsp[1], imsz[1])
+        fDdf = pd.DataFrame(data=np.transpose(fDim), index=ya, columns=xa) # Impuesto por la manera en la que Eclipse orienta el plano de dosis en Portal Dosimetry
         st.session_state.fDdf = fDdf
     if 'fps' not in st.session_state:
         st.session_state.fps = pxsp

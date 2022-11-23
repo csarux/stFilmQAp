@@ -19,6 +19,8 @@ if dcmplan is not None:
     # Leer el fichero DICOM
     dcmf = dicom.read_file(dcmplan)
 
+    if 'dcmf' not in st.session_state:
+        st.session_state.dcmf = dcmf
     if 'PatientId' not in st.session_state:
         st.session_state.PatientId = dcmf.PatientID
     if 'LastName' not in st.session_state:
@@ -62,19 +64,21 @@ if dcmplan is not None:
 
     st.subheader('Plano de dosis')
 
-    Dx = np.linspace(0, dcmf.Columns*dcmf.PixelSpacing[0],dcmf.Columns)
-    Dy = np.linspace(0, dcmf.Rows*dcmf.PixelSpacing[1], dcmf.Rows)
-    Dim = dcmf.pixel_array * dcmf.DoseGridScaling
-    Dosesdf = pd.DataFrame(data=Dim, index=Dy, columns=Dx)
+    px = np.linspace(0, (dcmf.Columns-1)*dcmf.PixelSpacing[1], dcmf.Columns)
+    py = np.linspace(0, (dcmf.Rows-1)*dcmf.PixelSpacing[0], dcmf.Rows)
+    pDim = dcmf.pixel_array * dcmf.DoseGridScaling
+    pDdf = pd.DataFrame(data=pDim, index=py, columns=px)
+
     if 'pDdf' not in st.session_state:
-        st.session_state.pDdf = Dosesdf
+        st.session_state.pDdf = pDdf
+
+    pDdf.columns.values
 
     if 'pps' not in st.session_state:
         st.session_state.pps = dcmf.PixelSpacing
 
-
     fig, ax = plt.subplots()
-    sns.heatmap(Dosesdf, cmap='jet', cbar_kws={'label': 'Dosis [Gy]'})
+    sns.heatmap(pDdf, cmap='jet', cbar_kws={'label': 'Dosis [Gy]'})
     ax.xaxis.set_major_locator(ticker.MultipleLocator(40))
     ax.xaxis.set_major_formatter(ticker.ScalarFormatter())
     ax.yaxis.set_major_locator(ticker.MultipleLocator(40))

@@ -15,17 +15,6 @@ import streamlit as st
 
 dmax = 20 # Desplazamiento másximo permitido
 
-gamma_options = {
-    'dose_percent_threshold': 3,
-    'distance_mm_threshold': 3,
-    'lower_percent_dose_cutoff': 1,
-    'interp_fraction': 10,  # Should be 10 or more for more accurate results
-    'max_gamma': 2,
-    'random_subset': None,
-    'local_gamma': True,
-    'ram_available': 4**29,  # 1/2 GB
-}
-
 logger = logging.getLogger()
 logger.setLevel(logging.CRITICAL)
 
@@ -35,6 +24,7 @@ st.title('4. Análisis')
 
 with st.sidebar:
     method= st.radio('Comparación', ['blend', 'checkerboard', 'diff', 'gamma'], help='Modo de comparación entre las dos distribuciones de dosis')
+    gammaholder = st.empty()
 
     dx = st.slider(
         'Desplazamiento x [mm]',
@@ -45,7 +35,7 @@ with st.sidebar:
         -dmax, dmax, 0)
 
 pDdf = st.session_state.pDdf
-px, py = pDdf.columns, pDdf.index
+px, py = pDdf.columns.values, pDdf.index.values
 pps = st.session_state.pps
 pDim = pDdf.values
 
@@ -59,21 +49,42 @@ with st.sidebar:
         floor(px.min()), floor(px.max()), floor((px.max() - px.min())*.5))
 
 fDdf = st.session_state.fDdf
-fx, fy = fDdf.columns, fDdf.index
+fx, fy = fDdf.columns.values, fDdf.index.values
 fps = st.session_state.fps
 fDim = fDdf.values
 
 fDo = RBSp(fy, fx, fDim)
 yy, xx = np.meshgrid(py, px, sparse=True)
-fDrim = fDo.ev(yy + dx, xx + dy)
+fDrim = fDo.ev(yy + dy, xx + dx)
 fDrim[fDrim < 0] = 0 # Acotar la dosis a valores positivos para evitar artefactos producidos en la extrapolación
 fDrdf = pd.DataFrame(data=fDrim, index=py, columns=px)
 if method in ['blend', 'checkerboard']:
+    gammaholder.empty()
     cmpim = cmpimgs(fDrim, pDim, method=method)
 elif method is 'diff':
+    gammaholder.empty()
     cmpim = fDrim - pDim
 elif method is 'gamma':
-    cmpim = gamma((px, py), pDim, (fy+dy, fx+dx), fDim, **gamma_options)
+    with gammaholder.container():
+        doseperc = st.slider('Diferencia de dosis [%]', 1, 5, 2, key='gdoseperc')
+        distmm = st.slider('Distancia [mm]', 1, 5, 2, key='gdmm')
+        dosecutoffperc = st.slider('Umbral de dosis [%]', 1, 50, 25, key='gth')
+        local = st.checkbox('Local', value=True, key='glocal')
+
+    gamma_options = {
+        'dose_percent_threshold': doseperc,
+        'distance_mm_threshold': distmm,
+        'lower_percent_dose_cutoff': dosecutoffperc,
+        'interp_fraction': 10,  # Should be 10 or more for more accurate results
+        'max_gamma': 2,
+        'random_subset': None,
+        'local_gamma': local,
+        'ram_available': 2**30,  # 1 GB
+    }
+
+    cmpim = gamma((py/10, px/10), pDim, ((py+dy)/10, (px+dx)/10), fDrim, **gamma_options)
+    gamma1 = np.copy(cmpim)
+    gamma1[gamma1 > 1] = np.nan
 
 cmpdf = pd.DataFrame(data=cmpim, index=py, columns=px)
 
@@ -131,8 +142,8 @@ coll, colr = st.columns(2)
 with coll:
     fig, ax = plt.subplots()
     ax.plot(px, pDim[pry, :], '-', color='darkred', label='Plan x')
-    ax.plot(py, fDrim[pry, :], '-', color='red', label='Film x')
-    ax.plot(px, pDim[:, prx], '-', color='darkgreen', label='Plan y')
+    ax.plot(px, fDrim[pry, :], '-', color='red', label='Film x')
+    ax.plot(py, pDim[:, prx], '-', color='darkgreen', label='Plan y')
     ax.plot(py, fDrim[:, prx], '-', color='darkcyan', label='Film y')
     ax.plot(prx, pDim[pry, prx], 'x', color='darkred', label='Plan {:.2f}'.format(pDim[pry, prx]))
     ax.plot(prx, fDrim[pry, prx], 'o', color='red', label='Film {:.2f}'.format(fDrim[pry, prx]))
@@ -147,10 +158,17 @@ with coll:
     st.pyplot(fig)
 
 with colr:
+
     cmpa = np.ravel(cmpdf.values)
 
     fig, ax = plt.subplots()
-    sns.histplot(cmpa, binrange=(cmpa.min(), cmpa.max()), bins=30)
+    if method is 'gamma':
+        gamma1v = np.ravel(gamma1)
+        sns.histplot(cmpa, binrange=(0, 2), bins=30, color='red')
+        sns.histplot(gamma1v, binrange=(0, 2), bins=30, ax=ax)
+    elif method is 'diff':
+        sns.histplot(cmpa, binrange=(np.nanmin(cmpa) * 0.5, np.nanmax(cmpa) * 0.5), bins=30)
+
     ax.set_xlabel('Diferencia de dosis [Gy]')
     ax.set_ylabel('Cuentas')
     if method not in ['blend', 'checkerboard']:
