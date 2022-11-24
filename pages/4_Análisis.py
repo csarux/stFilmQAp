@@ -23,14 +23,19 @@ st.set_page_config(page_title='FilmQAp', layout="wide")
 st.title('4. Análisis')
 
 with st.sidebar:
+    profile= st.radio('Perfil', ['x', 'y', 'Ambos'], index=2, help='Seleccionar perfiles mostrados')
+
     method= st.radio('Comparación', ['blend', 'checkerboard', 'diff', 'gamma'], help='Modo de comparación entre las dos distribuciones de dosis')
+
+    diffholder = st.empty()
+
     gammaholder = st.empty()
 
-    dx = st.slider(
+    dy = st.slider(
         'Desplazamiento x [mm]',
         -dmax, dmax, 0)
 
-    dy = st.slider(
+    dx = st.slider(
         'Desplazamiento y [mm]',
         -dmax, dmax, 0)
 
@@ -59,16 +64,25 @@ fDrim = fDo.ev(yy + dy, xx + dx)
 fDrim[fDrim < 0] = 0 # Acotar la dosis a valores positivos para evitar artefactos producidos en la extrapolación
 fDrdf = pd.DataFrame(data=fDrim, index=py, columns=px)
 if method in ['blend', 'checkerboard']:
+    diffholder.empty()
     gammaholder.empty()
     cmpim = cmpimgs(fDrim, pDim, method=method)
+
 elif method is 'diff':
     gammaholder.empty()
-    cmpim = fDrim - pDim
+    with diffholder.container():
+        cmpim = fDrim - pDim
+        diffmin, diffmax = floor(cmpim.min()), ceil(cmpim.max())
+        diffrange = st.slider('Rango de la diferencia [Gy]', diffmin, diffmax, [diffmin, diffmax], key='diffrange')
+        cmpim[cmpim > diffrange[1]] = np.nan
+        cmpim[cmpim < diffrange[0]] = np.nan
+
 elif method is 'gamma':
+    diffholder.empty()
     with gammaholder.container():
         doseperc = st.slider('Diferencia de dosis [%]', 1, 5, 2, key='gdoseperc')
         distmm = st.slider('Distancia [mm]', 1, 5, 2, key='gdmm')
-        dosecutoffperc = st.slider('Umbral de dosis [%]', 1, 50, 25, key='gth')
+        dosecutoffperc = st.slider('Umbral de dosis [%]', 1, 50, 10, key='gth')
         local = st.checkbox('Local', value=True, key='glocal')
 
     gamma_options = {
@@ -141,24 +155,30 @@ coll, colr = st.columns(2)
 
 with coll:
     fig, ax = plt.subplots()
-    ax.plot(px, pDim[pry, :], '-', color='darkred', label='Plan x')
-    ax.plot(px, fDrim[pry, :], '-', color='red', label='Film x')
-    ax.plot(py, pDim[:, prx], '-', color='darkgreen', label='Plan y')
-    ax.plot(py, fDrim[:, prx], '-', color='darkcyan', label='Film y')
-    ax.plot(prx, pDim[pry, prx], 'x', color='darkred', label='Plan {:.2f}'.format(pDim[pry, prx]))
-    ax.plot(prx, fDrim[pry, prx], 'o', color='red', label='Film {:.2f}'.format(fDrim[pry, prx]))
-    ax.plot(pry, pDim[pry, prx], 'x', color='darkgreen', label='Plan {:.2f}'.format(pDim[pry, prx]))
-    ax.plot(pry, fDrim[pry, prx], 'o', color='darkcyan', label='Film {:.2f}'.format(fDrim[pry, prx]))
 
-    ax.set_xlabel('x, y [mm]')
+    if profile in ['x', 'Ambos']:
+        ax.plot(px, pDim[pry, :], '-', color='darkred', label='Plan x')
+        ax.plot(px, fDrim[pry, :], '-', color='red', label='Film x')
+        ax.plot(prx, pDim[pry, prx], 'x', color='darkred', label='Plan {:.2f}'.format(pDim[pry, prx]))
+        ax.plot(prx, fDrim[pry, prx], 'o', color='red', label='Film {:.2f}'.format(fDrim[pry, prx]))
+        ax.set_xlabel('x [mm]')
+
+    if profile in ['y', 'Ambos']:
+        ax.plot(py, pDim[:, prx], '-', color='darkgreen', label='Plan y')
+        ax.plot(py, fDrim[:, prx], '-', color='darkcyan', label='Film y')
+        ax.plot(pry, pDim[pry, prx], 'x', color='darkgreen', label='Plan {:.2f}'.format(pDim[pry, prx]))
+        ax.plot(pry, fDrim[pry, prx], 'o', color='darkcyan', label='Film {:.2f}'.format(fDrim[pry, prx]))
+        ax.set_xlabel('y [mm]')
+
+    if profile is 'Ambos':
+        ax.set_xlabel('x, y [mm]')
+
     ax.set_ylabel('Dosis [Gy]')
-
     ax.legend()
 
     st.pyplot(fig)
 
 with colr:
-
     cmpa = np.ravel(cmpdf.values)
 
     fig, ax = plt.subplots()
@@ -177,18 +197,20 @@ with colr:
             verticalalignment='center',
             transform = ax.transAxes)
     elif method is 'diff':
-        sns.histplot(cmpa, binrange=(np.nanmin(cmpa) * 0.5, np.nanmax(cmpa) * 0.5), bins=30)
+        bins = (diffrange[1]-diffrange[0])*10
+        if bins < 50: bins = 50
+        sns.histplot(cmpa, binrange=(diffrange[0], diffrange[1]), bins=bins)
         ax.set_ylabel('Cuentas')
         ax.set_xlabel('Diferencia de dosis [Gy]')
-        meandiff = cmpa.mean()
+        meandiff = np.nanmean(cmpa)
         meanmsg = 'Diferencia media: {:.2f} Gy'.format(meandiff)
-        stddiff = cmpa.std()
+        stddiff = np.nanstd(cmpa)
         stdmsg = 'Sigma diferencia: {:.2f} Gy'.format(stddiff)
-        ax.text(0.65, 0.90, meanmsg,
+        ax.text(0.8, 0.95, meanmsg,
             horizontalalignment='center',
             verticalalignment='center',
             transform = ax.transAxes)
-        ax.text(0.65, 0.85, stdmsg,
+        ax.text(0.8, 0.90, stdmsg,
             horizontalalignment='center',
             verticalalignment='center',
             transform = ax.transAxes)

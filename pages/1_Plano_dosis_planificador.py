@@ -72,8 +72,6 @@ if dcmplan is not None:
     if 'pDdf' not in st.session_state:
         st.session_state.pDdf = pDdf
 
-    pDdf.columns.values
-
     if 'pps' not in st.session_state:
         st.session_state.pps = dcmf.PixelSpacing
 

@@ -85,3 +85,5 @@ with colh:
     ax.set_xlabel('Residuo relativo [%]')
     ax.set_ylabel('Cuentas')
     st.pyplot(fig)
+
+    caldf
