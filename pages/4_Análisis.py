@@ -170,7 +170,7 @@ with colr:
         gamma1acnts, bins = np.histogram(gamma1a, range=(0, 2), bins=30)
         gammaresult = gamma1acnts.sum() / cmpacnts.sum() * 100
         ax.set_ylabel('Cuentas')
-        ax.set_xlabel('Índice gamma')
+        ax.set_xlabel('Índice $\gamma$')
         gammamsg = 'Puntos con $\gamma$ < 1: {:.2f}%'.format(gammaresult)
         ax.text(0.65, 0.75, gammamsg,
             horizontalalignment='center',
