@@ -893,6 +893,7 @@ def PDDCalibration(config=None, imfile=None, base=None):
     tcaldf = pd.DataFrame({'f' : base[2], 'phir' : bcalfresult.params.get('phir').value, 'kr' : bcalps[2], 'phib' : bcalfresult.params.get('phib').value, 'kb' : bcalps[4]}, index=['B'])
     caldf = pd.concat([caldf, tcaldf])
 
+
     # Return the current scan calibration parameter DataFrmme, calibration dataframe and pixel size
     return caldf, cdf, sips
 
@@ -1099,7 +1100,7 @@ def mphspcnlmprocf(imfile=None, config=None, caldf=None, ccdf=None):
     adDg = np.zeros_like(dim[...,1])
     adDb = np.zeros_like(dim[...,2])
     nrs = dim.shape[1]
-    for j in stqdm(np.arange(nrs), st_container=st.sidebar, desc='Procecesando la película:'):
+    for j in stqdm(np.arange(nrs), st_container=st.sidebar, desc='Procesando la película'):
         xc = np.abs(ccdf.o - ccdf.c) * ccdf.s / 25.4
         x = np.abs(ccdf.o - (ccdf.p0 + j)) * ccdf.s / 25.4
         npx = dim.shape[0]

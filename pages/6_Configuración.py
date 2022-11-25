@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import configparser
 from math import ceil
 import streamlit as st
@@ -38,5 +39,16 @@ for row in range(numrows):
                             config.write(cfgfile)
 
 with st.sidebar:
-    st.file_uploader('Dosis de calibración:', help='Seleccionar el archivo de texto exportado del planificador.')
-#TODO Añadir la función que genere el archivo xlsx a partir de la información del planificador
+    calfilename = st.file_uploader('Dosis de calibración:', help='Seleccionar el archivo de texto exportado del planificador.')
+
+    if calfilename is not None:
+        # Leer el fichero DICOM
+        calfdf = pd.read_csv(calfilename, header=8, sep='\s+', names=['cm', 'cGy'])
+        calfdf.cGy = calfdf.cGy / 100
+        calfdf.rename({'cGy' : 'Gy'}, axis=1, inplace=True)
+
+        calfdf
+
+        calfdf.rename({'cm' : 'z', 'Gy' : 'D'}, axis=1, inplace=True)
+
+        calfdf.to_excel('config/TestCal.xlsx')

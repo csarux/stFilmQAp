@@ -20,8 +20,6 @@ logger.setLevel(logging.CRITICAL)
 
 st.set_page_config(page_title='FilmQAp', layout="wide")
 
-st.title('4. Análisis')
-
 with st.sidebar:
     profile= st.radio('Perfil', ['x', 'y', 'Ambos'], index=2, help='Seleccionar perfiles mostrados')
 
