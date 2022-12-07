@@ -99,6 +99,7 @@ if __name__ == "__main__":
     scim = st.file_uploader('Digitalización de la película:', help='Seleccionar el archivo TIFF adquirido en el escáner.')
 
     if scim is not None:
+        st.session_state.scim = scim
         # Guardar una copia local de la imagen
         lcscim = os.path.join("img_dir",scim.name)
         with open(lcscim,"wb") as f:
