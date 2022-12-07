@@ -6,15 +6,13 @@ coll, colc, colr = st.columns([1, 3, 1])
 with colc:
     st.title('Documentación')
 
-    st.header('Generalidades')
-
     st.markdown(
     '''
     `FilmQAp` es una aplicación para procesar películas radiocrómicas mediante un esquema de digitalización única (*SSP, single scan protocol*) utilizando un algoritmo multicanal de promedios no locales. La calibración del algoritmo emplea un modelo de crecimiento con la dosis de dos tipos de absorbentes particularizado a las condiciones presentes durante la digitalización. El algoritmo corrige el efecto lateral del escáner.
 
-    La información dosimétrica se genera en `dxf` (formato de archivos de intercambio de información de Varian). Estos archivos se pueden importar en la aplicación Portal Dosimetry para su posterior análisis y registro.
+    La información dosimétrica se genera en `dxf` (formato de archivos de intercambio de información de Varian). Estos archivos se pueden importar en la aplicación **Portal Dosimetry** para su posterior análisis y registro.
 
-    Esta documentación describe el procedimiento para completar un control de calidad paciente específico mediante *dosimetría fotográfica*.
+    Esta documentación describe el procedimiento para completar un control de calidad paciente específico mediante *dosimetría fotográfica* y `FilmQAp`.
     '''
     )
 
@@ -35,7 +33,7 @@ with colc:
 
     st.markdown(
     '''
-    En la imagen anterior a un plan HyperArc se le han añadido dos campos para poder exportar planos sagitales desplazados 1 cm respecto al centro del maniquí. Por tanto esos campos están centrados en x = 0 , y = +1, z = 0, y en  x = 0 , y = -1, z = 0
+    En la imagen anterior a un plan HyperArc se le han añadido dos campos para exportar planos sagitales desplazados 1 cm respecto al centro del maniquí. Los campos se han centrado en x = 0 , y = +1, z = 0, y en  x = 0 , y = -1, z = 0
 
     Calcular la distribución de dosis y seleccionar la ventana que contenga el plano que se quiere exportar. Registrar si se trata de un plano axial, sagital o coronal. En la imagen anterior puede verse que la ventana iluminada es la que corresponde a los planos sagitales.
 
@@ -65,7 +63,7 @@ with colc:
     st.subheader('Preparación de la película para la medida')
     st.markdown(
     '''
-    El tamaño de las películas con las que se mide está limitado por el tamaño del maniquí sobre el que se ha calculado el plan de verificación. Lo que sí es posible es irradiar películas de un tamaño inferior.
+    El tamaño de las películas con las que se mide está limitado por el tamaño del maniquí sobre el que se ha calculado el plan de verificación. Sí es posible irradiar películas de un tamaño inferior si se desea.
 
     Cortar la película con las dimensiones del plan calculado, normalmente un cuadrado de 16 cm por 16 cm.
     '''
