@@ -11,9 +11,10 @@ import configparser
 import streamlit as st
 st.set_page_config(page_title='FilmQAp')
 
-st.header('1. Procesar el plano de dosis calculado en el planificador')
+st.header('1. Plano de dosis calculado')
 
-dcmplan = st.file_uploader('Archivo DICOM de dosis:', help='Seleccionar el archivo DICOM exportado del planificador.')
+with st.sidebar:
+    dcmplan = st.file_uploader('Archivo DICOM de dosis:', help='Seleccionar el archivo DICOM exportado del planificador.')
 
 if dcmplan is not None:
     # Leer el fichero DICOM
@@ -86,6 +87,7 @@ if dcmplan is not None:
 
     st.pyplot(fig)
 
-    plandxf = fqa.dcm2dxf(dcmf=dcmf, config=config)
-    if plandxf:
-        st.success('Exportado el archivo RT Dose en formato dxf: \n' + str(plandxf))
+    dxfplanstr = fqa.dcm2dxfString(dcmf=dcmf, config=config)
+    if dxfplanstr:
+        with st.sidebar:
+            st.download_button(label='Descargar dxf', data=dxfplanstr, file_name='Plan.dxf', mime='text/csv')

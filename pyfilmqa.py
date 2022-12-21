@@ -173,6 +173,59 @@ def HeaderCreator(DataOriginDateTime='', AcqType='Acquired Portal', PatientId1='
     return header
 
 
+def dxfString(Data=None, AcqType='Acquired Portal', PatientId1='', PatientId2='', LastName='', FirstName='', pxsp=[], imsz=[], DataOriginDateTime=''):
+    """
+    A function to output the dxf string
+
+    ...
+
+    Attributes
+    ----------
+    Data : 2D numpy array
+        The data to be exported
+
+    AcqType : str
+        The type of the orgin data: acquired or predicted
+
+    PatientId1 : str
+        The first patient identification
+
+    PatientId2 : str
+        The second patient identification
+
+    LastName : str
+        The patient family name
+
+    First Name : str
+        The patient given name
+
+    pxsp : list
+        A list with the pixel spacing in mm
+
+    imsz : list
+        A list with the image size in pixels
+
+    DataOriginDateTime: str
+        The date and time creation of the data origin
+
+     Returns
+    -------
+    dxfstr : str
+        The dxf string
+    """
+
+    # Write the header
+    headerstr = HeaderCreator(DataOriginDateTime=DataOriginDateTime, AcqType=AcqType, PatientId1=PatientId1, PatientId2=PatientId2, LastName=LastName, FirstName=FirstName, pxsp=pxsp, imsz=imsz)
+
+    # Write the data
+    df = pd.DataFrame(Data)
+    datastr = df.to_csv(sep='\t', header=False, index=False, float_format='%.2f')
+
+    # Write the dxf string
+    dxfstr = headerstr + datastr
+
+    return dxfstr
+
 def dxfWriter(Data=None, dxfFileName='Film.dxf', AcqType='Acquired Portal', PatientId1='', PatientId2='', LastName='', FirstName='', pxsp=[], imsz=[], DataOriginDateTime=''):
     """
     A function to write the dxf file
@@ -263,6 +316,43 @@ def dcm2dxf(dcmf=None, config=None):
               PatientId2=demodict['PatientId1'], LastName=demodict['LastName'],
               FirstName=demodict['FirstName'], pxsp=pxsp, imsz=imsz)
     return dxffilePath
+
+def dcm2dxfString(dcmf=None, config=None):
+    """
+    A function to output RT Dose DICOM files into a dxf format string
+
+    ...
+
+    Attributes
+    ----------
+    dcmf : BytesIO
+        The RT Dose DICOM data
+
+    config : ConfigParser
+        An object with the functionalities of the configparser module
+
+    Returns
+    -------
+    dxfstr : str
+        A dxf format string
+
+    """
+
+    PatientId1 = dcmf.PatientID
+    PatientId2 = ''
+    PatientName = str(dcmf.PatientName)
+    LastName, FirstName = PatientName.split('^')
+    demodict = {'PatientId1' : PatientId1, 'PatientId2' : PatientId2, 'LastName' : LastName, 'FirstName' : FirstName}
+    pxsp = dcmf.PixelSpacing
+    imsz = [dcmf.Rows, dcmf.Columns]
+    pDim = dcmf.pixel_array*dcmf.DoseGridScaling
+    dxffilePath = Path(config['DEFAULT']['exportpath'] + demodict['PatientId1'] + '/PlanStreamlit.dxf')
+    strDataOriginDateTime = datetime.strptime(dcmf.InstanceCreationDate + ' ' + dcmf.InstanceCreationTime, '%Y%m%d %H%M%S.%f').strftime('%m/%d/%Y, %H:%M:%S')
+    dxfstr = dxfString(Data=pDim, DataOriginDateTime=strDataOriginDateTime, 
+                        AcqType='Predicted Portal', PatientId1=demodict['PatientId1'],
+                        PatientId2=demodict['PatientId1'], LastName=demodict['LastName'],
+                        FirstName=demodict['FirstName'], pxsp=pxsp, imsz=imsz)
+    return dxfstr
 
 def calf(D, f, phir, kr, phib, kb):
     """
