@@ -644,7 +644,7 @@ def readCalParms(config=None):
 
     """
 
-    configpath = config['DEFAULT']['configpath']
+    configpath = './config/'
     modelsfile = config['Models']['File']
     modelsheet = config['Models']['mphSheet']
 
@@ -671,7 +671,7 @@ def readRatParms(config=None):
 
     """
 
-    configpath = config['DEFAULT']['configpath']
+    configpath = './config/'
     modelsfile = config['Models']['File']
     modelsheet = config['Models']['racSheet']
     ratdf = pd.read_excel(configpath + modelsfile, sheet_name=modelsheet)
@@ -848,7 +848,7 @@ def PDDCalibration(config=None, imfile=None, base=None):
     """
 
     # Read the calculated calibration absorbed dose distributiom (PDD)
-    pddcalibfile = config['Calibration']['Path'] + config['Calibration']['File']
+    pddcalibfile = './config/' + config['Calibration']['File']
     cdf = pd.read_excel(pddcalibfile)
 
     # Read the calibration image segment data
@@ -897,7 +897,7 @@ def PDDCalibration(config=None, imfile=None, base=None):
     cdf.dropna(inplace=True)
 
     # Read the standard calibration parameters (multiphse model)
-    configpath = config['DEFAULT']['configpath']
+    configpath = './config/'
     modelsfile = config['Models']['File']
     modelsheet = config['Models']['mphSheet']
     caldf = pd.read_excel(configpath + modelsfile, sheet_name=modelsheet)
@@ -1132,7 +1132,7 @@ def mphspcnlmprocf(imfile=None, config=None, caldf=None, ccdf=None):
     bcalps = caldf.iloc[2].values
 
     # Spatial correction functions
-    recadc = np.load(config['DEFAULT']['configpath'] + config['Models']['oadcFile'], allow_pickle=True)
+    recadc = np.load('./config/' + config['Models']['oadcFile'], allow_pickle=True)
     phiRrf = recadc[0, 0].item()
     phiGrf = recadc[0, 1].item()
     phiBrf = recadc[0, 2].item()
@@ -1266,7 +1266,7 @@ def premphspcnlmprocf(imfile=None, config=None, caldf=None, ccdf=None):
     bcalps = caldf.iloc[2].values
 
     # Spatial correction functions
-    recadc = np.load(config['DEFAULT']['configpath'] + config['Models']['oadcFile'], allow_pickle=True)
+    recadc = np.load('./config/' + config['Models']['oadcFile'], allow_pickle=True)
     phiRrf = recadc[0, 0].item()
     phiGrf = recadc[0, 1].item()
     phiBrf = recadc[0, 2].item()
@@ -1378,7 +1378,7 @@ def mphspcnlmprocf_multiprocessing(imfile=None, config=None, caldf=None, ccdf=No
     bcalps = caldf.iloc[2].values
 
     # Spatial correction functions
-    scfile = config['DEFAULT']['configpath']+config['Models']['oadcFile']
+    scfile = './config/'+config['Models']['oadcFile']
     recadc = np.load(scfile, allow_pickle=True)
     phiRrf = recadc[0, 0].item()
     phiGrf = recadc[0, 1].item()
