@@ -346,7 +346,6 @@ def dcm2dxfString(dcmf=None, config=None):
     pxsp = dcmf.PixelSpacing
     imsz = [dcmf.Rows, dcmf.Columns]
     pDim = dcmf.pixel_array*dcmf.DoseGridScaling
-    dxffilePath = Path(config['DEFAULT']['exportpath'] + demodict['PatientId1'] + '/PlanStreamlit.dxf')
     strDataOriginDateTime = datetime.strptime(dcmf.InstanceCreationDate + ' ' + dcmf.InstanceCreationTime, '%Y%m%d %H%M%S.%f').strftime('%m/%d/%Y, %H:%M:%S')
     dxfstr = dxfString(Data=pDim, DataOriginDateTime=strDataOriginDateTime, 
                         AcqType='Predicted Portal', PatientId1=demodict['PatientId1'],
