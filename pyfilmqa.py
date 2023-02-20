@@ -307,7 +307,7 @@ def dcm2dxf(dcmf=None, config=None):
     PatientNames = PatientName.split('^')
     LastName, FirstName = PatientNames[`0`], PatientNames[1]
     if len(PatientNames) == 3:
-        FirstName = PatientNames[[1] + ' ' + PatientNames[2]
+        FirstName = PatientNames[1] + ' ' + PatientNames[2]
     demodict = {'PatientId1' : PatientId1, 'PatientId2' : PatientId2, 'LastName' : LastName, 'FirstName' : FirstName}
     pxsp = dcmf.PixelSpacing
     imsz = [dcmf.Rows, dcmf.Columns]
@@ -347,7 +347,7 @@ def dcm2dxfString(dcmf=None, config=None):
     PatientNames = PatientName.split('^')
     LastName, FirstName = PatientNames[`0`], PatientNames[1]
     if len(PatientNames) == 3:
-        FirstName = PatientNames[[1] + ' ' + PatientNames[2]
+        FirstName = PatientNames[1] + ' ' + PatientNames[2]
     demodict = {'PatientId1' : PatientId1, 'PatientId2' : PatientId2, 'LastName' : LastName, 'FirstName' : FirstName}
     pxsp = dcmf.PixelSpacing
     imsz = [dcmf.Rows, dcmf.Columns]
