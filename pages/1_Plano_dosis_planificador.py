@@ -37,13 +37,21 @@ if dcmplan is not None:
     config.read(configfile)
 
     # Mostrar los datos del paciente
-    apellidos, nombre = str(dcmf.PatientName).split('^')
+    ApellidosYNombres = str(dcmf.PatientName).split('^')
+    apellidos = ApellidosYNombres[0]
+    nombre = ApellidosYNombres[1]
     apellidos = apellidos.split()
     apellidos = [apellido[0] + apellido[1:].lower() for apellido in apellidos]
     apellidos = ' '.join(apellidos)
     nombres = nombre.split()
     nombres = [nombre[0] + nombre[1:].lower() for nombre in nombres]
     nombre = ' '.join(nombres)
+    if len(ApellidosYNombres) == 3:
+        segundonombre = ApellidosYNombres[2]
+        segundosnombres = segundonombre.split()
+        segundosnombres = [segundonombre[0] + segundonombre[1:].lower() for segundonombre in segundosnombres]
+    nombre = nombre + ' ' + ' '.joinsegundosnombres
+        
     patdict = {'Historia' : dcmf.PatientID, 'Apellidos' :apellidos, 'Nombre' : nombre}
     patdf = pd.DataFrame(patdict, index=[0])
 
