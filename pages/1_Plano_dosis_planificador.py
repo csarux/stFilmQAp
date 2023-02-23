@@ -50,7 +50,7 @@ if dcmplan is not None:
         segundonombre = ApellidosYNombres[2]
         segundosnombres = segundonombre.split()
         segundosnombres = [segundonombre[0] + segundonombre[1:].lower() for segundonombre in segundosnombres]
-    nombre = nombre + ' ' + ' '.join(segundosnombres)
+        nombre = nombre + ' ' + ' '.join(segundosnombres)
         
     patdict = {'Historia' : dcmf.PatientID, 'Apellidos' :apellidos, 'Nombre' : nombre}
     patdf = pd.DataFrame(patdict, index=[0])
