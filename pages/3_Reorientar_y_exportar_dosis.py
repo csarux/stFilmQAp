@@ -69,7 +69,7 @@ def tif2dxf(fDim=None):
         ya = np.linspace(0, (imsz[0]-1)*pxsp[0], imsz[0])
         xa = np.linspace(0, (imsz[1]-1)*pxsp[1], imsz[1])
 #        fDdf = pd.DataFrame(data=np.transpose(fDim), index=ya, columns=xa) # Impuesto por la manera en la que Eclipse orienta el plano de dosis en Portal Dosimetry
-        fDdf = pd.DataFrame(data=fDim, index=xa, columns=ya)
+        fDdf = pd.DataFrame(data=np.rot90(fDim, k=1), index=ya, columns=xa)
         st.session_state.fDdf = fDdf
     if 'fps' not in st.session_state:
         st.session_state.fps = pxsp
