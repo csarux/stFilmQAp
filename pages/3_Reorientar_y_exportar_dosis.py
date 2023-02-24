@@ -16,48 +16,56 @@ import streamlit as st
 
 def original():
     fDim = np.array(st.session_state.fDim).reshape((st.session_state.fcols, st.session_state.frows))
+    st.session_state.fDim = fDim
     dxffilmstr = tif2dxfString(fDim=fDim)
     return dxffilmstr
 
 def rot90():
     fDim = np.array(st.session_state.fDim).reshape((st.session_state.fcols, st.session_state.frows))
     fDim = np.rot90(fDim)
+    st.session_state.fDim = fDim
     dxffilmstr = tif2dxfString(fDim=fDim)
     return dxffilmstr
 
 def rot180():
     fDim = np.array(st.session_state.fDim).reshape((st.session_state.fcols, st.session_state.frows))
     fDim = np.rot90(fDim, k=2)
+    st.session_state.fDim = fDim
     dxffilmstr = tif2dxfString(fDim=fDim)
     return dxffilmstr
 
 def rot270():
     fDim = np.array(st.session_state.fDim).reshape((st.session_state.fcols, st.session_state.frows))
     fDim = np.rot90(fDim, k=3)
+    st.session_state.fDim = fDim
     dxffilmstr = tif2dxfString(fDim=fDim)
     return dxffilmstr
 
 def voltear():
     fDim = np.array(st.session_state.fDim).reshape((st.session_state.fcols, st.session_state.frows))
     fDim = np.fliplr(fDim)
+    st.session_state.fDim = fDim
     dxffilmstr = tif2dxfString(fDim=fDim)
     return dxffilmstr
 
 def vrot90():
     fDim = np.array(st.session_state.fDim).reshape((st.session_state.fcols, st.session_state.frows))
     fDim = np.rot90(np.fliplr(fDim))
+    st.session_state.fDim = fDim
     dxffilmstr = tif2dxfString(fDim=fDim)
     return dxffilmstr
 
 def vrot180():
     fDim = np.array(st.session_state.fDim).reshape((st.session_state.fcols, st.session_state.frows))
     fDim = np.rot90(np.fliplr(fDim), k=2)
+    st.session_state.fDim = fDim
     dxffilmstr = tif2dxfString(fDim=fDim)
     return dxffilmstr
 
 def vrot270():
     fDim = np.array(st.session_state.fDim).reshape((st.session_state.fcols, st.session_state.frows))
     fDim = np.rot90(np.fliplr(fDim), k=3)
+    st.session_state.fDim = fDim
     dxffilmstr = tif2dxfString(fDim=fDim)
     return dxffilmstr
 
