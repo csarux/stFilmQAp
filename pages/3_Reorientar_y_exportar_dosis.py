@@ -16,56 +16,48 @@ import streamlit as st
 
 def original():
     fDim = np.array(st.session_state.fDim).reshape((st.session_state.fcols, st.session_state.frows))
-    st.session_state.fDim = fDim
     dxffilmstr = tif2dxfString(fDim=fDim)
     return dxffilmstr
 
 def rot90():
     fDim = np.array(st.session_state.fDim).reshape((st.session_state.fcols, st.session_state.frows))
     fDim = np.rot90(fDim)
-    st.session_state.fDim = fDim
     dxffilmstr = tif2dxfString(fDim=fDim)
     return dxffilmstr
 
 def rot180():
     fDim = np.array(st.session_state.fDim).reshape((st.session_state.fcols, st.session_state.frows))
     fDim = np.rot90(fDim, k=2)
-    st.session_state.fDim = fDim
     dxffilmstr = tif2dxfString(fDim=fDim)
     return dxffilmstr
 
 def rot270():
     fDim = np.array(st.session_state.fDim).reshape((st.session_state.fcols, st.session_state.frows))
     fDim = np.rot90(fDim, k=3)
-    st.session_state.fDim = fDim
     dxffilmstr = tif2dxfString(fDim=fDim)
     return dxffilmstr
 
 def voltear():
     fDim = np.array(st.session_state.fDim).reshape((st.session_state.fcols, st.session_state.frows))
     fDim = np.fliplr(fDim)
-    st.session_state.fDim = fDim
     dxffilmstr = tif2dxfString(fDim=fDim)
     return dxffilmstr
 
 def vrot90():
     fDim = np.array(st.session_state.fDim).reshape((st.session_state.fcols, st.session_state.frows))
     fDim = np.rot90(np.fliplr(fDim))
-    st.session_state.fDim = fDim
     dxffilmstr = tif2dxfString(fDim=fDim)
     return dxffilmstr
 
 def vrot180():
     fDim = np.array(st.session_state.fDim).reshape((st.session_state.fcols, st.session_state.frows))
     fDim = np.rot90(np.fliplr(fDim), k=2)
-    st.session_state.fDim = fDim
     dxffilmstr = tif2dxfString(fDim=fDim)
     return dxffilmstr
 
 def vrot270():
     fDim = np.array(st.session_state.fDim).reshape((st.session_state.fcols, st.session_state.frows))
     fDim = np.rot90(np.fliplr(fDim), k=3)
-    st.session_state.fDim = fDim
     dxffilmstr = tif2dxfString(fDim=fDim)
     return dxffilmstr
 
@@ -76,7 +68,8 @@ def tif2dxf(fDim=None):
     if 'fDdf' not in st.session_state:
         ya = np.linspace(0, (imsz[0]-1)*pxsp[0], imsz[0])
         xa = np.linspace(0, (imsz[1]-1)*pxsp[1], imsz[1])
-        fDdf = pd.DataFrame(data=np.transpose(fDim), index=ya, columns=xa) # Impuesto por la manera en la que Eclipse orienta el plano de dosis en Portal Dosimetry
+#        fDdf = pd.DataFrame(data=np.transpose(fDim), index=ya, columns=xa) # Impuesto por la manera en la que Eclipse orienta el plano de dosis en Portal Dosimetry
+        fDdf = pd.DataFrame(data=fDim, index=xa, columns=ya)
         st.session_state.fDdf = fDdf
     if 'fps' not in st.session_state:
         st.session_state.fps = pxsp
