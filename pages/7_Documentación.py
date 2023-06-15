@@ -161,7 +161,7 @@ with colc:
     )
 
     img = Image.open('Images/areaUploadPlanoDosisPlanificador.jpg')
-    st.image(img, caption='Área de subida.')
+    st.image(img, caption='Área de subida.', width=315)
 
     st.markdown(
     '''
@@ -170,7 +170,16 @@ with colc:
     )
 
     img = Image.open('Images/salidaPlanoDosisPlanificador.jpg')
-    st.image(img, caption='Página "Plano dosis planificador" tras procesar la información exportada')
+    st.image(img, caption='Página "Plano dosis planificador" tras procesar la información exportada', width=700)
+
+    st.markdown(
+    '''
+    En la barra lateral bajo la indicación del nombre de archivo DICOM subido, pulsar el botón **Descargar dxf**. La aplicación descarga la conversión del archivo DICOM con el plano calculado al formato de intercambio de Varian.
+    '''
+    )
+
+    img = Image.open('Images/botonDescargarPlanoCalculado.jpg')
+    st.image(img, caption='Botón de descarga del plano calculado.', width=315)
 
     st.subheader('Película')
 
@@ -209,7 +218,7 @@ with colc:
     )
 
     img = Image.open('Images/etiquetadoImagen.jpg')
-    st.image(img, caption='Segmentación de la imagen')
+    st.image(img, caption='Segmentación de la imagen', width=700)
 
     st.markdown(
     '''
@@ -218,7 +227,7 @@ with colc:
     )
 
     img = Image.open('Images/imagenesRecortadas.jpg')
-    st.image(img, caption='Imágenes recortadas con sus etiquetas')
+    st.image(img, caption='Imágenes recortadas con sus etiquetas', width=700)
 
     st.markdown(
     '''
@@ -227,7 +236,7 @@ with colc:
     )
 
     img = Image.open('Images/processButton.jpg')
-    st.image(img, caption='Botón para procesar la película', width=350)
+    st.image(img, caption='Botón para procesar la película', width=315)
 
     st.markdown(
     '''
@@ -236,11 +245,28 @@ with colc:
     )
 
     img = Image.open('Images/barraProgreso.jpg')
-    st.image(img, caption='Barra de progreso', width=350)
+    st.image(img, caption='Barra de progreso del procesado', width=315)
 
-    img = Image.open('Images/mensajeExito.jpg')
+    st.markdown(
+    '''
+    En caso de que el procesado se complete correctamente un mensaje de éxito aparace en la parte superior de la ventana principal de la aplicación.
+    '''
+    )
+
+    img = Image.open('Images/mensajeExitoProcesado.jpg')
     st.image(img, caption='Mensaje de éxito al final del procesado de la película')
 
+    st.markdown(
+    '''
+    El procesado asume que previamente se ha cargado el plano de dosis cáculado para estimar el rango de dosis que se espera medir con la pelíucla. En caso de no haberse cargado un mensaje de error informa sobre este hecho.
+    '''
+    )
+
+    img = Image.open('Images/mensajeErrorProcesado.jpg')
+    st.image(img, caption='Mensaje de error por falta de plan calculado')
+
+    st.subheader('Reorientación y exporación')
+    
     st.markdown(
     '''
     Seleccionar en la barra lateral la opción **Reorientar y exportar la dosis**
@@ -248,4 +274,119 @@ with colc:
     )
 
     img = Image.open('Images/menuReorientarExportarDosis.jpg')
-    st.image(img, caption='Opción "Reorientar exportar dosis"')
+    st.image(img, caption='Opción "Reorientar exportar dosis"', width=315)
+
+    st.markdown(
+    '''
+    `FilmQAp` no presupone ninguna orientación predefinida sobre el plano medido ni al irradiar ni al digitalizar la película. El único requisito es mantener la coherencia con el criterio de orientación tomado en la calibración
+    al digitalizar. La imagen de dosis procesada puede aparecer en cualquier orientación respecto al plano calculado. 
+    
+    `FilmQAp` muestra la orientación del plano calculado y las ocho posibles orientaciones del plano medido. Seleccionar la orientación correcta pinchando sobre la imagen correspondiente.
+    '''
+    )
+
+    img = Image.open('Images/SeleccionOrientacion.jpg')
+    st.image(img, caption='Selección de la orientación correcta', width=750)
+
+    st.markdown(
+    '''
+    En la barra lateral pulsar el botón **Descargar dxf**. La aplicación descarga el plano medido en el formato de intercambio de Varian.
+    '''
+    )
+
+    img = Image.open('Images/botonDescargarPlanoMedido.jpg')
+    st.image(img, caption='Botón de descarga del plano medido.', width=315)
+
+    st.subheader('Calibración')
+
+    st.markdown(
+    '''
+    Para obtener información sobre la calibración empleada en el procesado seleccionar la opción **Calibración** en la barra lateral.
+    '''
+    )
+
+    img = Image.open('Images/menuCalibracion.jpg')
+    st.image(img, caption='Opción Calibración.', width=315)
+
+    st.markdown(
+    '''
+    FilmQAp muestra varios gráficos y tablas con la información sobre los ajustes de calibración, sus parámetros y estimaciones de incertidumbre.
+    '''
+    )
+
+    img = Image.open('Images/pantallaCalibracion.jpg')
+    st.image(img, caption='Vista de la información sobre la calibración.', width=750)
+
+    st.markdown(
+    '''
+    El primero de los gráficos muestra para los tres canales de color las curvas de la densidad óptica determinada a partir de la señal digital del escáner en función de la dosis absorbida.
+    La línea formada por guiones y puntos son los valores medidos, la línea continua la forman las densidades ópticas esperadas a partir del modelo ajustado de calibración para las dosis empleadas y la linea
+    de guines la constituyen los valores densidades ópticas calculadas por el modelo cuando se introducen las dosis determinadas por el procesado de la película de calibración.
+    '''
+    )
+
+    img = Image.open('Images/curvasCalibracion.jpg')
+    st.image(img, caption='Densidad óptica en función de la dosis para los tres canales.', width=500)
+
+    st.markdown(
+    '''
+    El segundo de los gráficos muestra la curva delerror relativo entre la dosis esperada de calibración y la realmente medida con el modelo en función de la dosis.
+    '''
+    )
+
+    img = Image.open('Images/curvaErrorRelvsDosis.jpg')
+    st.image(img, caption='Error relativo en función de la dosis.', width=500)
+
+    st.markdown(
+    '''
+    La tercera gráfica es el histograma del error relativo para todas la dosis absorbidas empleadas en la calibración.
+    '''
+    )
+
+    img = Image.open('Images/HistogramaErrorRel.jpg')
+    st.image(img, caption='Histograma del error relativo de la dosis.', width=500)
+
+    st.markdown(
+    '''
+    La cuarta gráfica muestra la comparación entre la dosis de irradiación y la determinada por la tira de calibración en función de la dosis.
+    '''
+    )
+
+    img = Image.open('Images/curvaDosisMedidavsCalibracion.jpg')
+    st.image(img, caption='Dosis medida frente a dosis de calibración.', width=500)
+
+    st.markdown(
+    '''
+    Tabla con los valores de calibración en función de la profundidad, los valores ajustados por el modelo y sus incertidumbres.
+    '''
+    )
+
+    img = Image.open('Images/valoresCalibracion.jpg')
+    st.image(img, caption='Tabla navegable con los valores de calibración.', width=500)
+
+    st.markdown(
+    '''
+    Tabla con los parámetros de calibración para los tres canales.
+    '''
+    )
+
+    img = Image.open('Images/parametrosCalibracion.jpg')
+    st.image(img, caption='Tabla con los parámetros de calibración.', width=500)
+
+    st.subheader('Configuración')
+
+    st.markdown(
+    '''
+    La página de configuración muestra y permite cambiar los valores de configuración utilizados por la aplicación `FilmQAp`
+    '''
+    )
+
+
+
+
+
+
+
+
+
+    
