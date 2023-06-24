@@ -3,7 +3,6 @@ import pandas as pd
 import configparser
 from math import ceil
 import streamlit as st
-
 st.set_page_config(page_title='FilmQAp', layout="wide")
 
 st.title('Configuración')
@@ -40,10 +39,6 @@ for row in range(numrows):
                             config.write(cfgfile)
 
 with st.sidebar:
-    def scannerUpdate():
-        st.write(scanner)
-
-    scanner = st.selectbox('Digitalizador', ['Microtek 1000XL', 'EPSON 10000XL'], help='Seleccionar el digitalizador utilizado', on_change=scannerUpdate)
     calfilename = st.file_uploader('Dosis de calibración:', help='Seleccionar el archivo de texto exportado del planificador.')
 
     if calfilename is not None:

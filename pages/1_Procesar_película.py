@@ -15,7 +15,7 @@ from streamlit_img_label import st_img_label
 # - Config file
 import configparser
 import streamlit as st
-st.set_page_config(page_title='FilmQAp')
+st.set_page_config(page_title='chromLit')
 
 
 def run(img_dir, labels):
@@ -112,6 +112,10 @@ def run(img_dir, labels):
         configfile='config/filmQAp.config'
         config.read(configfile)
 
+        # Leer el valor de la dosis máxima fijado en la configuración
+        if 'Dmax' not in st.session_state:
+            st.session_state.Dmax = fqa.getDmax(config=config)
+        
         # Determinar las coordenadas para la corrección lateral
         cdf = fqa.coordOAC(imfile=imfile)
         # Determinación del fondo
@@ -135,7 +139,7 @@ def run(img_dir, labels):
                 st.session_state.frows = frows
                 st.success('Convertida a dosis la información de la película.')
         else:
-            st.error('Error: Plano de dosis calculado en el planificador no introducido, no es posible completar el postprocesado de la dosis medida por la película.')
+            st.error('Error: No se ha configurado el valor de la dosis máxima medible.')
 
     if rects:
         with st.sidebar:
@@ -159,7 +163,7 @@ def run(img_dir, labels):
                 im.set_annotation(i, select_label)
 
 if __name__ == "__main__":
-    st.header('2. Procesar el plano de dosis medido mediante la película')
+    st.header('1. Procesar el plano de dosis medido mediante la película')
 
     scim = st.file_uploader('Digitalización de la película:', help='Seleccionar el archivo TIFF adquirido en el escáner.')
 
