@@ -1364,9 +1364,9 @@ def mphspcnlmprocf_multiprocessing(imfile=None, config=None, caldf=None, ccdf=No
     dimcols = [dim[:, y, :] for y in np.arange(dim.shape[1])]
     xc = np.abs(ccdf.o - ccdf.c) * ccdf.s / 25.4
     xl = [np.abs(ccdf.o - (ccdf.p0 + col)) * ccdf.s / 25.4 for col, dimcol in enumerate(dimcols)]
-    colsrcalps = np.array([rcalps * np.array([1, phiRrf(x)/phiRrf(xc), 1, phiRbf(x)/phiRbf(xc), 1]) for x in xl], dtype=object)
-    colsgcalps = np.array([gcalps * np.array([1, phiGrf(x)/phiGrf(xc), 1, phiGbf(x)/phiGbf(xc), 1]) for x in xl], dtype=object)
-    colsbcalps = np.array([bcalps * np.array([1, phiBrf(x)/phiBrf(xc), 1, phiBbf(x)/phiBbf(xc), 1]) for x in xl], dtype=object)
+    colsrcalps = np.array([rcalps * np.array([1, phiRrf(x)/phiRrf(xc), 1, phiRbf(x)/phiRbf(xc), 1], dtype=object) for x in xl], dtype=object)
+    colsgcalps = np.array([gcalps * np.array([1, phiGrf(x)/phiGrf(xc), 1, phiGbf(x)/phiGbf(xc), 1], dtype=object) for x in xl], dtype=object)
+    colsbcalps = np.array([bcalps * np.array([1, phiBrf(x)/phiBrf(xc), 1, phiBbf(x)/phiBbf(xc), 1], dtype=object) for x in xl], dtype=object)
 
     with Pool(None) as p:
         Dim = np.array(
