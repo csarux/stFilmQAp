@@ -1376,7 +1376,7 @@ def mphspcnlmprocf_multiprocessing(imfile=None, config=None, caldf=None, ccdf=No
                               [[dimcol,
                                 colsrcalps[col], colsgcalps[col], colsbcalps[col],
                                 rratps, gratps, bratps] for col, dimcol in enumerate(dimcols)]
-                     ), total=len(dimcols), st_container=st.sidebar, desc='Procecesando la película:'
+                     ), total=len(dimcols), st_container=st.sidebar, desc='Procecesando la película'
                 )
             )
         )
