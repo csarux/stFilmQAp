@@ -48,7 +48,6 @@ from scipy.optimize import fsolve
 from lmfit import Parameters, Model
 # - Progress bar
 from stqdm import stqdm
-from tqdm.notebook import tqdm
 # - To pass additional parameters to map function
 from itertools import repeat
 # - Multiprocessing
@@ -1365,9 +1364,9 @@ def mphspcnlmprocf_multiprocessing(imfile=None, config=None, caldf=None, ccdf=No
     dimcols = [dim[:, y, :] for y in np.arange(dim.shape[1])]
     xc = np.abs(ccdf.o - ccdf.c) * ccdf.s / 25.4
     xl = [np.abs(ccdf.o - (ccdf.p0 + col)) * ccdf.s / 25.4 for col, dimcol in enumerate(dimcols)]
-    colsrcalps = np.array([rcalps * np.array([1, phiRrf(x)/phiRrf(xc), 1, phiRbf(x)/phiRbf(xc), 1], dtype=object) for x in xl], dtype=object)
-    colsgcalps = np.array([gcalps * np.array([1, phiGrf(x)/phiGrf(xc), 1, phiGbf(x)/phiGbf(xc), 1], dtype=object) for x in xl], dtype=object)
-    colsbcalps = np.array([bcalps * np.array([1, phiBrf(x)/phiBrf(xc), 1, phiBbf(x)/phiBbf(xc), 1], dtype=object) for x in xl], dtype=object)
+    colsrcalps = np.array([rcalps * np.array([1, phiRrf(x)/phiRrf(xc), 1, phiRbf(x)/phiRbf(xc), 1]) for x in xl], dtype=object)
+    colsgcalps = np.array([gcalps * np.array([1, phiGrf(x)/phiGrf(xc), 1, phiGbf(x)/phiGbf(xc), 1]) for x in xl], dtype=object)
+    colsbcalps = np.array([bcalps * np.array([1, phiBrf(x)/phiBrf(xc), 1, phiBbf(x)/phiBbf(xc), 1]) for x in xl], dtype=object)
 
     with Pool(None) as p:
         Dim = np.array(
@@ -1378,124 +1377,6 @@ def mphspcnlmprocf_multiprocessing(imfile=None, config=None, caldf=None, ccdf=No
                                 colsrcalps[col], colsgcalps[col], colsbcalps[col],
                                 rratps, gratps, bratps] for col, dimcol in enumerate(dimcols)]
                      ), total=len(dimcols), st_container=st.sidebar, desc='Procecesando la película:'
-                )
-            )
-        )
-    return Dim
-
-
-def mphspcnlmprocf_multiprocessing_notebook(imfile=None, config=None, caldf=None, ccdf=None):
-    """
-    A function to preprocess the dose distribution image using nonlocal means denoising and the multiphase calibration model with spatial correction
-
-    ...
-
-    Attributes
-    ----------
-    imfile : str
-        The name of the image file, the file containing the scanned image of the dose distribution, the calibration strip and the base strip in TIFF format.
-
-    config : ConfigParser
-        An object with the functionalities of the configparser module
-
-    caldf : pandas DataFrame
-        The current scan calibration parameters
-
-    ccdf : pandas DataFrame
-        A data structure containing the relevant geometric parameters for the spatial correction
-
-    Returns
-    -------
-    mphspcnlmprocim : 2D numpy arrray
-        The dose distribution
-    """
-    dosefilename = Path(imfile)
-    dosefilename = dosefilename.with_suffix('.Film.tif')
-
-    # Denoise
-    udim = nlmf(dosefilename, config)
-
-    # Optical density image
-    dim = np.log10(2**16/(udim+0.0000001))
-
-    # Current multiphase calibration parameters
-    rcalps = caldf.iloc[0].values
-    gcalps = caldf.iloc[1].values
-    bcalps = caldf.iloc[2].values
-
-    # Spatial correction functions
-    scfile = config['DEFAULT']['configpath']+config['Models']['oadcFile']
-    recadc = np.load(scfile, allow_pickle=True)
-    phiRrf = recadc[0, 0].item()
-    phiGrf = recadc[0, 1].item()
-    phiBrf = recadc[0, 2].item()
-    phiRbf = recadc[1, 0].item()
-    phiGbf = recadc[1, 1].item()
-    phiBbf = recadc[1, 2].item()
-
-    # Rational approximation
-
-    # Define models
-    rratfmodel = Model(iratf)
-    gratfmodel = Model(iratf)
-    bratfmodel = Model(iratf)
-
-    # Initialize parameters
-    rratparams = rratfmodel.make_params(
-        a = 0.1,
-        b = 0.1,
-        c = 0.1
-    )
-
-    gratparams = gratfmodel.make_params(
-        a = 0.1,
-        b = 0.1,
-        c = 0.1
-    )
-
-    bratparams = bratfmodel.make_params(
-        a = 0.1,
-        b = 0.1,
-        c = 0.1
-    )
-
-
-    # Generate calibration points
-
-    vDrat = np.array([0.5, 0.75, 1., 1.25, 1.5, 2., 3., 4., 5., 7., 9.])
-
-    vdrrat =  calf(vDrat, *rcalps)
-    vdgrat =  calf(vDrat, *gcalps)
-    vdbrat =  calf(vDrat, *bcalps)
-
-    # Fit
-    rratfit = rratfmodel.fit(data=vDrat, params=rratparams, d=vdrrat)
-    gratfit = gratfmodel.fit(data=vDrat, params=gratparams, d=vdgrat)
-    bratfit = bratfmodel.fit(data=vDrat, params=bratparams, d=vdbrat)
-
-    # Rational calibration paramters
-    rratps = np.array([k.value for k in rratfit.params.values()])
-    gratps = np.array([k.value for k in gratfit.params.values()])
-    bratps = np.array([k.value for k in bratfit.params.values()])
-
-
-    DimcolsList = []
-    dimcols = [dim[:, y, :] for y in np.arange(dim.shape[1])]
-    xc = np.abs(ccdf.o - ccdf.c) * ccdf.s / 25.4
-    xl = [np.abs(ccdf.o - (ccdf.p0 + col)) * ccdf.s / 25.4 for col, dimcol in enumerate(dimcols)]
-    colsrcalps = np.array([rcalps * np.array([1, phiRrf(x)/phiRrf(xc), 1, phiRbf(x)/phiRbf(xc), 1]) for x in xl], dtype=object)
-    colsgcalps = np.array([gcalps * np.array([1, phiGrf(x)/phiGrf(xc), 1, phiGbf(x)/phiGbf(xc), 1]) for x in xl], dtype=object)
-    colsbcalps = np.array([bcalps * np.array([1, phiBrf(x)/phiBrf(xc), 1, phiBbf(x)/phiBbf(xc), 1]) for x in xl], dtype=object)
-
-    with Pool(None) as p:
-        Dim = np.array(
-            list(
-                tqdm(
-                     p.imap(wrapped_colDoseCalculationMphspcnlmprocf,
-                              [[dimcol,
-                                colsrcalps[col], colsgcalps[col], colsbcalps[col],
-                                rratps, gratps, bratps] for col, dimcol in enumerate(dimcols)]
-                     ), total=len(dimcols), desc='Procecesando la película'
                 )
             )
         )
