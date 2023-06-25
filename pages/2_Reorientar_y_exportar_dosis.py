@@ -16,42 +16,42 @@ import streamlit as st
 
 def original():
     fDim = np.array(st.session_state.fDim).reshape((st.session_state.fcols, st.session_state.frows))
-    tif2dxf(fDim=fDim)
+    st.session_state.fOrDim = fDim
 
 def rot90():
     fDim = np.array(st.session_state.fDim).reshape((st.session_state.fcols, st.session_state.frows))
     fDim = np.rot90(fDim)
-    tif2dxf(fDim=fDim)
+    st.session_state.fOrDim = fDim
 
 def rot180():
     fDim = np.array(st.session_state.fDim).reshape((st.session_state.fcols, st.session_state.frows))
     fDim = np.rot90(fDim, k=2)
-    tif2dxf(fDim=fDim)
+    st.session_state.fOrDim = fDim
 
 def rot270():
     fDim = np.array(st.session_state.fDim).reshape((st.session_state.fcols, st.session_state.frows))
     fDim = np.rot90(fDim, k=3)
-    tif2dxf(fDim=fDim)
+    st.session_state.fOrDim = fDim
 
 def voltear():
     fDim = np.array(st.session_state.fDim).reshape((st.session_state.fcols, st.session_state.frows))
     fDim = np.fliplr(fDim)
-    tif2dxf(fDim=fDim)
+    st.session_state.fOrDim = fDim
 
 def vrot90():
     fDim = np.array(st.session_state.fDim).reshape((st.session_state.fcols, st.session_state.frows))
     fDim = np.rot90(np.fliplr(fDim))
-    tif2dxf(fDim=fDim)
+    st.session_state.fOrDim = fDim
 
 def vrot180():
     fDim = np.array(st.session_state.fDim).reshape((st.session_state.fcols, st.session_state.frows))
     fDim = np.rot90(np.fliplr(fDim), k=2)
-    tif2dxf(fDim=fDim)
+    st.session_state.fOrDim = fDim
 
 def vrot270():
     fDim = np.array(st.session_state.fDim).reshape((st.session_state.fcols, st.session_state.frows))
     fDim = np.rot90(np.fliplr(fDim), k=3)
-    tif2dxf(fDim=fDim)
+    st.session_state.fOrDim = fDim
 
 def tif2dxf(fDim=None):
     pxsp = fqa.TIFFPixelSpacing(os.path.join("img_dir", st.session_state.FilmFileName))
@@ -85,7 +85,39 @@ def tif2dxf(fDim=None):
                   AcqType='Acquired Portal', PatientId1=st.session_state.PatientId,
                   PatientId2=st.session_state.PatientId, LastName=st.session_state.LastName,
                   FirstName=st.session_state.FirstName, pxsp=pxsp, imsz=imsz)
-    st.success('Exportada la dosis medida por la película en formato dxf: \n' + dxffilePath.as_posix())
+
+def tif2dxfString(fDim=None):
+    pxsp = fqa.TIFFPixelSpacing(os.path.join("img_dir", st.session_state.FilmFileName))
+    imsz = fqa.DoseImageSize(fDim)
+
+    ya = np.linspace(0, (imsz[0]-1)*pxsp[0], imsz[0])
+    xa = np.linspace(0, (imsz[1]-1)*pxsp[1], imsz[1])
+    fDdf = pd.DataFrame(data=np.transpose(fDim), index=ya, columns=xa) # Impuesto por la manera en la que Eclipse orienta el plano de dosis en Portal Dosimetry
+    st.session_state.fDdf = fDdf
+    if 'fps' not in st.session_state:
+        st.session_state.fps = pxsp
+
+    config = configparser.ConfigParser()
+    configfile='config/filmQAp.config'
+    config.read(configfile)
+    if 'PatientId' not in st.session_state:
+        st.session_state.PatientId = config['Demographics']['patientid']
+    if 'FirstName' not in st.session_state:
+        st.session_state.FirstName = config['Demographics']['patientname']
+    if 'LastName' not in st.session_state:
+        st.session_state.LastName = config['Demographics']['patientfamilyname']
+    if 'Gender' not in st.session_state:
+        st.session_state.Gender = config['Demographics']['gender']
+    if 'DoseFilmFileName' not in st.session_state:
+        st.session_state.DoseFilmFileName = config['FilmPlane']['filename']
+    
+    dxffilePath = Path(config['DEFAULT']['exportpath'] + st.session_state.DoseFilmFileName + '.dxf')
+
+    dxffilmstr = fqa.dxfString(Data=fDim,
+                               AcqType='Acquired Portal', PatientId1=st.session_state.PatientId,
+                               PatientId2=st.session_state.PatientId, LastName=st.session_state.LastName,
+                               FirstName=st.session_state.FirstName, pxsp=pxsp, imsz=imsz)
+    return dxffilmstr
 
 st.title('2. Reorientar y exportar')
 
@@ -130,3 +162,9 @@ else:
         vrot180()
     elif imSel == 7:
         vrot270()
+    
+    if 'fOrDim' in st.session_state:
+        dxffilmstr = tif2dxfString(st.session_state.fOrDim)
+        with st.sidebar:
+            st.download_button(label='Descargar dxf', data=dxffilmstr, file_name='Film.dxf', mime='text/csv')
+
