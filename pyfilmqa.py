@@ -22,8 +22,13 @@ from pathlib import Path
 import numpy as np
 # - Data mamaging
 import pandas as pd
+# - Binary files
+from io import BytesIO
 # - DICOM files editing
 import pydicom as dicom
+from pydicom import dcmread, dcmwrite
+from pydicom.filebase import DicomFileLike
+from pydicom.uid import generate_uid
 # - TIFF files
 from tifffile import TiffFile
 from tifffile import imread as timread, imwrite as timwrite
@@ -225,6 +230,151 @@ def dxfWriter(Data=None, dxfFileName='Film.dxf', AcqType='Acquired Portal', Pati
         df = pd.DataFrame(Data)
         # Write the data
         df.to_csv(dxf, sep='\t', header=False, index=False, float_format='%.2f')
+
+def dxfString(Data=None, AcqType='Acquired Portal', PatientId1='', PatientId2='', LastName='', FirstName='', pxsp=[], imsz=[], DataOriginDateTime=''):
+    """
+    A function to output the dxf string
+
+    ...
+
+    Attributes
+    ----------
+    Data : 2D numpy array
+        The data to be exported
+
+    AcqType : str
+        The type of the orgin data: acquired or predicted
+
+    PatientId1 : str
+        The first patient identification
+
+    PatientId2 : str
+        The second patient identification
+
+    LastName : str
+        The patient family name
+
+    First Name : str
+        The patient given name
+
+    pxsp : list
+        A list with the pixel spacing in mm
+
+    imsz : list
+        A list with the image size in pixels
+
+    DataOriginDateTime: str
+        The date and time creation of the data origin
+
+     Returns
+    -------
+    dxfstr : str
+        The dxf string
+    """
+
+    # Write the header
+    headerstr = HeaderCreator(DataOriginDateTime=DataOriginDateTime, AcqType=AcqType, PatientId1=PatientId1, PatientId2=PatientId2, LastName=LastName, FirstName=FirstName, pxsp=pxsp, imsz=imsz)
+
+    # Write the data
+    df = pd.DataFrame(Data)
+    datastr = df.to_csv(sep='\t', header=False, index=False, float_format='%.2f')
+
+    # Write the dxf string
+    dxfstr = headerstr + datastr
+
+    return dxfstr
+
+def write_dataset_to_bytes(dataset):
+    """
+    Function to convert a DICOM dataset into a byte string
+
+    ...
+
+    Attributes
+    ----------
+    dataset : DICOM dataset
+        The dataset to be converted
+
+     Returns
+    -------
+    memory_dataset: BinaryIO
+        A binary string cotaining the DICOM dataset
+
+    """ 
+    with BytesIO() as buffer:
+        # create a DicomFileLike object that has some properties of DataSet
+        memory_dataset = DicomFileLike(buffer)
+        # write the dataset to the DicomFileLike object
+        dcmwrite(memory_dataset, dataset)
+        # to read from the object, you have to rewind it
+        memory_dataset.seek(0)
+        # read the contents as bytes
+        return memory_dataset.read()
+
+def dcmWriter(Data=None, imfile=None, config=None):
+    """
+    Function to write a binary string containing the RT dose plane DICOM file
+
+    ...
+
+    Attributes
+    ----------
+    Data : 2D numpy array
+        The data to be exported
+
+    imfile : str
+        The name of the scan image with the measured dose distribution, the calibration strip and the background patch
+
+    config : ConfigParser
+        An object with the functionalities of the configparser module
+
+
+     Returns
+    -------
+    dsBinStr: BinaryIO
+        A binary string cotaining the RT dose plane DICOM file
+
+    """ 
+    # Read a dose plane DICOM file to use as template
+    ds = dcmread('DosePlaneTemplate.dcm')
+
+    # Modify the template
+    ds.SOPInstanceUID = generate_uid()
+    ds.file_meta.MediaStorageSOPClassUID = ds.SOPInstanceUID
+    ds.StudyInstanceUID = generate_uid()
+    ds.SeriesInstanceUID = generate_uid()
+    ds.FrameOfReferenceUID = generate_uid(prefix=None)
+    #ds.PlanReferencedSOPInstanceUID = generate_uid()
+    ds.StudyDate = datetime.now().strftime('%Y%m%d')
+    ds.StudyTime = datetime.now().strftime('%H%M%S.%f')
+    ds.Manufacturer = 'pychromic'
+    ds.StationName = ''
+    ds.StudyDescription='Radiohromic Dosimetry'
+    ds.SeriesDescription='Dose Plane'
+    ds.PhysiciansOfRecord = ''
+    ds.ManufacturerModelName = 'chromLit'
+
+    config = configparser.ConfigParser()
+    config.read('../config/filmQAp.config')
+
+    ds.PatientName = config['Demographics']['PatientFamilyName'] + '^' + config['Demographics']['PatientName']
+    ds.PatientID = config['Demographics']['PatientId']
+    ds.PatientBirthDate = ''
+    ds.PatientBirthTime = ''
+    ds.PatientSex = config['Demographics']['gender']
+    ds.OtherPatientIDs = config['Demographics']['patientid']
+
+    dosef = Data
+
+    ds.Rows, ds.Columns = dosef.shape
+    ds.PixelSpacing = TIFFPixelSpacing(imfile)
+    ds.DoseComment = 'QA Film'
+    ds.DoseGridScaling = str(dosef.max()**-1*1e-5)
+    ds.PixelData = (dosef*ds.DoseGridScaling).tobytes()
+
+    dsBinStr = write_dataset_to_bytes(ds)
+
+    return dsBinStr
 
 def dcm2dxf(dcmf=None, config=None):
     """
