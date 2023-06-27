@@ -311,6 +311,27 @@ def write_dataset_to_bytes(dataset):
         # read the contents as bytes
         return memory_dataset.read()
 
+def getMediaStorageSOPInstanceUID(binIODataSet=None)
+    """
+    Function to read the media storage SOP instance UID from a DICOM dataset
+
+    ...
+
+    Attributes
+    ----------
+    binIODataSet : BinaryIO
+        A binary string cotaining the DICOM dataset
+
+     Returns
+    -------
+    mediaStorageSOPInstanceUID: String
+        A string cotaining the DICOM dataset media storage SOP instance UID
+
+    """ 
+    readds = dcmread(BytesIO(dcmByteString))
+    mediaStorageSOPInstanceUID = readds.file_meta.MediaStorageSOPInstanceUID
+    return mediaStorageSOPInstanceUID
+
 def dcmWriter(Data=None, imfile=None, config=None):
     """
     Function to write a binary string containing the RT dose plane DICOM file
