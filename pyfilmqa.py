@@ -305,7 +305,7 @@ def write_dataset_to_bytes(dataset):
         # create a DicomFileLike object that has some properties of DataSet
         memory_dataset = DicomFileLike(buffer)
         # write the dataset to the DicomFileLike object
-        dcmwrite(memory_dataset, dataset)
+        dcmwrite(memory_dataset, dataset, write_like_original=False)
         # to read from the object, you have to rewind it
         memory_dataset.seek(0)
         # read the contents as bytes
@@ -336,7 +336,7 @@ def dcmWriter(Data=None, imfile=None, config=None):
 
     """ 
     # Read a dose plane DICOM file to use as template
-    ds = dcmread('DosePlaneTemplate.dcm')
+    ds = dcmread('img_dir/DosePlaneTemplate.dcm')
 
     # Modify the template
     ds.SOPInstanceUID = generate_uid()
@@ -354,11 +354,8 @@ def dcmWriter(Data=None, imfile=None, config=None):
     ds.PhysiciansOfRecord = ''
     ds.ManufacturerModelName = 'chromLit'
 
-    config = configparser.ConfigParser()
-    config.read('../config/filmQAp.config')
-
-    ds.PatientName = config['Demographics']['PatientFamilyName'] + '^' + config['Demographics']['PatientName']
-    ds.PatientID = config['Demographics']['PatientId']
+    ds.PatientName = config['Demographics']['patientfamilyname'] + '^' + config['Demographics']['patientname']
+    ds.PatientID = config['Demographics']['patientid']
     ds.PatientBirthDate = ''
     ds.PatientBirthTime = ''
     ds.PatientSex = config['Demographics']['gender']
@@ -370,7 +367,7 @@ def dcmWriter(Data=None, imfile=None, config=None):
     ds.PixelSpacing = TIFFPixelSpacing(imfile)
     ds.DoseComment = 'QA Film'
     ds.DoseGridScaling = str(dosef.max()**-1*1e-5)
-    ds.PixelData = (dosef*ds.DoseGridScaling).tobytes()
+    ds.PixelData = (np.array(dosef/float(ds.DoseGridScaling), np.uint32)).tobytes()
 
     dsBinStr = write_dataset_to_bytes(ds)
 
