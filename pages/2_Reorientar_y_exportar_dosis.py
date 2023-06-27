@@ -86,7 +86,7 @@ def tif2dxf(fDim=None):
                   PatientId2=st.session_state.PatientId, LastName=st.session_state.LastName,
                   FirstName=st.session_state.FirstName, pxsp=pxsp, imsz=imsz)
 
-def tif2dxfString(fDim=None):
+def tif2dxfString(fDim=None, config=None):
     pxsp = fqa.TIFFPixelSpacing(os.path.join("img_dir", st.session_state.FilmFileName))
     imsz = fqa.DoseImageSize(fDim)
 
@@ -97,9 +97,6 @@ def tif2dxfString(fDim=None):
     if 'fps' not in st.session_state:
         st.session_state.fps = pxsp
 
-    config = configparser.ConfigParser()
-    configfile='config/filmQAp.config'
-    config.read(configfile)
     if 'PatientId' not in st.session_state:
         st.session_state.PatientId = config['Demographics']['patientid']
     if 'FirstName' not in st.session_state:
@@ -163,8 +160,14 @@ else:
     elif imSel == 7:
         vrot270()
     
+    config = configparser.ConfigParser()
+    configfile='config/filmQAp.config'
+    config.read(configfile)
+
     if 'fOrDim' in st.session_state:
-        dxffilmstr = tif2dxfString(st.session_state.fOrDim)
+        dxffilmstr = tif2dxfString(st.session_state.fOrDim, config=config)
+        dcmfilmstr = fqa.dcmWriter(Data=st.session_state.fOrDim, imfile=Path('img_dir', st.session_state.FilmFileName), config=config)
         with st.sidebar:
             st.download_button(label='Descargar dxf', data=dxffilmstr, file_name='Film.dxf', mime='text/csv')
+            st.download_button(label='Descargar dcm', data=dcmfilmstr, file_name='Film.dcm')
 
