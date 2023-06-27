@@ -328,7 +328,7 @@ def getMediaStorageSOPInstanceUID(binIODataSet=None):
         A string cotaining the DICOM dataset media storage SOP instance UID
 
     """ 
-    readds = dcmread(BytesIO(dcmByteString))
+    readds = dcmread(BytesIO(binIODataSet))
     mediaStorageSOPInstanceUID = readds.file_meta.MediaStorageSOPInstanceUID
 
     return mediaStorageSOPInstanceUID
