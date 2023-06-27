@@ -311,7 +311,7 @@ def write_dataset_to_bytes(dataset):
         # read the contents as bytes
         return memory_dataset.read()
 
-def getMediaStorageSOPInstanceUID(binIODataSet=None)
+def getMediaStorageSOPInstanceUID(binIODataSet=None):
     """
     Function to read the media storage SOP instance UID from a DICOM dataset
 
@@ -330,6 +330,7 @@ def getMediaStorageSOPInstanceUID(binIODataSet=None)
     """ 
     readds = dcmread(BytesIO(dcmByteString))
     mediaStorageSOPInstanceUID = readds.file_meta.MediaStorageSOPInstanceUID
+
     return mediaStorageSOPInstanceUID
 
 def dcmWriter(Data=None, imfile=None, config=None):
