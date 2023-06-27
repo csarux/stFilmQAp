@@ -167,7 +167,8 @@ else:
     if 'fOrDim' in st.session_state:
         dxffilmstr = tif2dxfString(st.session_state.fOrDim, config=config)
         dcmfilmstr = fqa.dcmWriter(Data=st.session_state.fOrDim, imfile=Path('img_dir', st.session_state.FilmFileName), config=config)
+        dcmFileName = 'RD.' + fqa.getMediaStorageSOPInstanceUID(dcmfilmstr) +'.dcm'
         with st.sidebar:
             st.download_button(label='Descargar dxf', data=dxffilmstr, file_name='Film.dxf', mime='text/csv')
-            st.download_button(label='Descargar dcm', data=dcmfilmstr, file_name='Film.dcm')
+            st.download_button(label='Descargar dcm', data=dcmfilmstr, file_name=dcmFileName)
 
