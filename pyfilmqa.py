@@ -63,6 +63,29 @@ import streamlit as st
 
 # Funcion definitions
 
+def readConfig(configFile=None):
+    """
+    A function to read the config file
+
+    ...
+
+    Attributes
+    ----------
+    configFile : Path
+        The path of the config file
+
+    Returns
+    -------
+    config : ConfiPparser
+        A ConfigParser object containing the app config information
+    """
+
+    config = configparser.ConfigParser()
+    configfile='config/filmQAp.config'
+    config.read(configfile)
+
+    return config
+
 def HeaderCreator(DataOriginDateTime='', AcqType='Acquired Portal', PatientId1='', PatientId2='', LastName='', FirstName='', pxsp=[], imsz=[]):
     """
     A function to create the header of the dxf file
@@ -354,9 +377,6 @@ def dcmWriter(Data=None, imfile=None, config=None):
     ds.PhysiciansOfRecord = ''
     ds.ManufacturerModelName = 'chromLit'
 
-    config = configparser.ConfigParser()
-    config.read('../config/filmQAp.config')
-
     ds.PatientName = config['Demographics']['PatientFamilyName'] + '^' + config['Demographics']['PatientName']
     ds.PatientID = config['Demographics']['PatientId']
     ds.PatientBirthDate = ''
@@ -495,6 +515,70 @@ def iratf(d, a, b, c):
 
     return (a - c * 10**-d)/(10**-d - b)
 
+def iratSf(S, a, b, c, Sb):
+    """
+    Calibration function following a sensitometric model bases on rational functions using the digital signal as variable
+    
+    ...
+    
+    Attributes
+    ----------
+    S : unsigned int 16
+        The digital signal measured by the scanner in every color channel
+        
+    a : float64
+        First rational function parameter
+        
+    b : float64
+        Second rational function parameter
+    
+    c : float64
+        Third rational function parameter
+        
+    Sb : unsigned int 16
+        The base digital signal determined for the film
+
+    Returns
+    -------
+    D : float64
+        The abosrbed dose D corresponding to the digital signal S in each channel following the sensitometry model based on rational functions
+    
+    """
+    
+    return (a - c * S/Sb)/(S/Sb - b)
+    
+def deriv_iratSf(S, a, b, c, Sb):
+    """
+    Derivative of the calibration function following a sensitometric model bases on rational functions using the digital signal as variable
+    
+    ...
+    
+    Attributes
+    ----------
+    S : unsigned int 16
+        The digital signal measured by the scanner in every color channel
+        
+    a : float64
+        First rational function parameter
+        
+    b : float64
+        Second rational function parameter
+    
+    c : float64
+        Third rational function parameter
+        
+    Sb : unsigned int 16
+        The base digital signal determined for the film
+
+    Returns
+    -------
+    D : float64
+        The abosrbed dose D corresponding to the digital signal S in each channel following the sensitometry model based on rational functions
+    
+    """
+    
+    return (c * S/Sb * (1 - 1/Sb) + c * b/Sb - a)/(S/Sb - b)**2
+    
 def coordOAC(imfile=None, bbfile='./tmp/bb.csv'):
     """
     A function to calculate the relavant coordiantes for the off-axis spatial correction
@@ -1610,3 +1694,112 @@ def postmphspcnlmprocf(Dim=None, config=None):
 
     # Return the dose image
     return mphspcnlmprocim
+
+def mayermltchprocf(imfile=None, config=None, caldf=None, ccdf=None):
+    """
+    A function to process the dose distribution image using the Mayer implementation of the Micke multichannel method
+    
+    ...
+    
+    Attributes
+    ----------
+    imfile : str
+        The name of the image file, the file containing the scanned image of the dose distribution, the calibration strip and the base strip in TIFF format.
+        
+    config : ConfigParser
+        An object with the functionalities of the configparser module
+
+    caldf : pandas DataFrame
+        The current scan calibration parameters
+        
+    ccdf : pandas DataFrame
+        A data structure containing the relevant geometric parameters for the spatial correction
+
+    Returns
+    -------
+    Dopt : 2D numpy arrray 
+        The dose distribution
+    """
+    
+    dosefilename = Path(imfile)
+    dosefilename = dosefilename.with_suffix('.Film.tif')
+    
+    # Read the scanned dose image, and split the digital signal of each channel
+    im = imread(dosefilename)
+    Rim = im[..., 0]
+    Gim = im[..., 1]
+    Bim = im[..., 2]
+    
+    # Current multiphase calibration parameters
+    rcalps = caldf.iloc[0].values
+    gcalps = caldf.iloc[1].values
+    bcalps = caldf.iloc[2].values
+
+    # Background signal for every color channel
+    SbR, SbG, SbB = 2**16/10**rcalps[0], 2**16/10**gcalps[0], 2**16/10**bcalps[0]
+    
+    # Rational approximation
+    
+    # Define models
+    rratfmodel = Model(iratf)
+    gratfmodel = Model(iratf)
+    bratfmodel = Model(iratf)
+    
+    # Initialize parameters
+    rratparams = rratfmodel.make_params(
+        a = 0.1,
+        b = 0.1,
+        c = 0.1
+    )
+    
+    gratparams = gratfmodel.make_params(
+        a = 0.1,
+        b = 0.1,
+        c = 0.1
+    )
+    
+    bratparams = bratfmodel.make_params(
+        a = 0.1,
+        b = 0.1,
+        c = 0.1
+    ) 
+    
+    
+    # Generate calibration points
+    
+    vDrat = np.array([0.5, 0.75, 1., 1.25, 1.5, 2., 3., 4., 5., 7., 9.])
+    
+    vdrrat =  calf(vDrat, *rcalps)
+    vdgrat =  calf(vDrat, *gcalps)
+    vdbrat =  calf(vDrat, *bcalps)
+    
+    # Fit
+    rratfit = rratfmodel.fit(data=vDrat, params=rratparams, d=vdrrat)
+    gratfit = gratfmodel.fit(data=vDrat, params=gratparams, d=vdgrat)
+    bratfit = bratfmodel.fit(data=vDrat, params=bratparams, d=vdbrat)
+    
+    # Rational calibration paramters
+    aR, bR, cR = [k.value for k in rratfit.params.values()]
+    aG, bG, cG = [k.value for k in gratfit.params.values()]
+    aB, bB, cB = [k.value for k in bratfit.params.values()]
+    
+    # Dose calculation
+    print('Dose calculation (Mayer implementation of the independent perturbation multichannel algorithm):')
+
+    # Single channel doses from rational calibration
+    DR = iratSf(Rim, aR, bR, cR, 2**16)
+    DG = iratSf(Gim, aG, bG, cG, 2**16)
+    DB = iratSf(Bim, aB, bB, cB, 2**16)
+
+    Dave = (DR + DG + DB) / 3
+
+    aR = deriv_iratSf(Rim, aR, bR, cR, 2**16)
+    aG = deriv_iratSf(Gim, aG, bG, cG, 2**16)
+    aB = deriv_iratSf(Bim, aB, bB, cB, 2**16)
+
+    RS = (aR + aG + aB)**2/(aR**2 + aG**2 + aB**2)/3
+
+    Dopt = Dave - RS * (aR * DR + aG * DG + aB * DB) / ((aR + aG + aB) / (1 - RS)) 
+
+    print('Finished!')
+    return DR, DG, DB, Dave, Dopt
