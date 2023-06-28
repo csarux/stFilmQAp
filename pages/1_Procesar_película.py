@@ -168,12 +168,16 @@ def run(img_dir, labels):
                 im.set_annotation(i, select_label)
 
     def mayer_process():
+        return
 
     def red_process():
+        return
 
     def green_process():
+        return
 
     def blue_process():
+        return
         
 
 if __name__ == "__main__":
