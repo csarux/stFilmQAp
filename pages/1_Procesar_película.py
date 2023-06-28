@@ -141,6 +141,18 @@ def run(img_dir, labels):
         else:
             st.error('Error: No se ha configurado el valor de la dosis máxima medible.')
 
+    def mayer_process():
+        return
+
+    def red_process():
+        return
+
+    def green_process():
+        return
+
+    def blue_process():
+        return
+        
     if rects:
         with st.sidebar:
             st.button(label="NLM Process", on_click=nlm_process)
@@ -166,19 +178,6 @@ def run(img_dir, labels):
                     "Label", labels, key=f"label_{i}", index=default_index
                 )
                 im.set_annotation(i, select_label)
-
-    def mayer_process():
-        return
-
-    def red_process():
-        return
-
-    def green_process():
-        return
-
-    def blue_process():
-        return
-        
 
 if __name__ == "__main__":
     st.header('1. Procesar el plano de dosis medido mediante la película')
