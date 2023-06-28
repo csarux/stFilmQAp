@@ -93,7 +93,7 @@ def run(img_dir, labels):
     resized_rects = im.get_resized_rects()
     rects = st_img_label(resized_img, box_color="red", rects=resized_rects)
 
-    def process():
+    def nlm_process():
         imfile = 'img_dir/' + scim.name
         im.save_annotation()
         image_annotate_file_name = img_file_name.split(".")[0] + ".xml"
@@ -143,7 +143,7 @@ def run(img_dir, labels):
 
     if rects:
         with st.sidebar:
-            st.button(label="Process", on_click=process)
+            st.button(label="NLM Process", on_click=nlm_process)
 
         preview_imgs = im.init_annotation(rects)
 
