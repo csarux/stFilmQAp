@@ -144,6 +144,11 @@ def run(img_dir, labels):
     if rects:
         with st.sidebar:
             st.button(label="NLM Process", on_click=nlm_process)
+            st.button(label="Multichannel Process", on_click=mayer_process)
+            st.button(label="Red Channel Process", on_click=red_process)
+            st.button(label="Green Channel Process", on_click=green_process)
+            st.button(label="Blue Channel Process", on_click=blue_process)
+
 
         preview_imgs = im.init_annotation(rects)
 
@@ -161,6 +166,15 @@ def run(img_dir, labels):
                     "Label", labels, key=f"label_{i}", index=default_index
                 )
                 im.set_annotation(i, select_label)
+
+    def mayer_process():
+
+    def red_process():
+
+    def green_process():
+
+    def blue_process():
+        
 
 if __name__ == "__main__":
     st.header('1. Procesar el plano de dosis medido mediante la película')
