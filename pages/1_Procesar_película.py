@@ -142,9 +142,9 @@ def run(img_dir, labels):
             st.error('Error: No se ha configurado el valor de la dosis máxima medible.')
 
     def mayer_process():
-        config = fqa.readConfig(os.join.path('config', 'filmQAp.config'))
+        config = fqa.readConfig(os.path.join('config', 'filmQAp.config'))
 
-        img_file_name = os.join.path('img_dir', 'Film.tif')
+        img_file_name = os.path.join('img_dir', 'Film.tif')
 
         abase = fqa.baseDetermination(imfile=img_file_name, config=config)
 
@@ -165,9 +165,9 @@ def run(img_dir, labels):
         return
 
     def red_process():
-        config = fqa.readConfig(os.join.path('config', 'filmQAp.config'))
+        config = fqa.readConfig(os.path.join('config', 'filmQAp.config'))
 
-        img_file_name = os.join.path('img_dir', 'Film.tif')
+        img_file_name = os.path.join('img_dir', 'Film.tif')
 
         abase = fqa.baseDetermination(imfile=img_file_name, config=config)
 
@@ -188,9 +188,9 @@ def run(img_dir, labels):
         return 
 
     def green_process():
-        config = fqa.readConfig(os.join.path('config', 'filmQAp.config'))
+        config = fqa.readConfig(os.path.join('config', 'filmQAp.config'))
 
-        img_file_name = os.join.path('img_dir', 'Film.tif')
+        img_file_name = os.path.join('img_dir', 'Film.tif')
 
         abase = fqa.baseDetermination(imfile=img_file_name, config=config)
 
@@ -211,9 +211,9 @@ def run(img_dir, labels):
         return
 
     def blue_process():
-        config = fqa.readConfig(os.join.path('config', 'filmQAp.config'))
+        config = fqa.readConfig(os.path.join('config', 'filmQAp.config'))
 
-        img_file_name = os.join.path('img_dir', 'Film.tif')
+        img_file_name = os.path.join('img_dir', 'Film.tif')
 
         abase = fqa.baseDetermination(imfile=img_file_name, config=config)
 
