@@ -1,13 +1,13 @@
 <annotation>
     <folder>img_dir</folder>
     <filename>Film.png</filename>
-    <path>/Users/maqui/Documents/devel/chromLit/stFilmQAp/img_dir/Film.png</path>
+    <path>/home/radiofisica/Shares/Radiofisica/csr/chromLit/stFilmQAp/img_dir/Film.png</path>
     <source>
         <database>Unknown</database>
     </source>
     <size>
-        <width>577</width>
-        <height>976</height>
+        <width>486</width>
+        <height>975</height>
         <depth>3</depth>
     </size>
     <segmented>0</segmented>
@@ -17,10 +17,10 @@
         <truncated>0</truncated>
         <difficult>0</difficult>
         <bndbox>
-            <xmin>68</xmin>
-            <ymin>502</ymin>
-            <xmax>523</xmax>
-            <ymax>942</ymax>
+            <xmin>13</xmin>
+            <ymin>493</ymin>
+            <xmax>464</xmax>
+            <ymax>943</ymax>
         </bndbox>
     </object>    <object>
         <name>Calibration</name>
@@ -28,10 +28,10 @@
         <truncated>0</truncated>
         <difficult>0</difficult>
         <bndbox>
-            <xmin>262</xmin>
-            <ymin>39</ymin>
-            <xmax>328</xmax>
-            <ymax>494</ymax>
+            <xmin>91</xmin>
+            <ymin>18</ymin>
+            <xmax>158</xmax>
+            <ymax>466</ymax>
         </bndbox>
     </object>    <object>
         <name>Background</name>
@@ -39,10 +39,10 @@
         <truncated>0</truncated>
         <difficult>0</difficult>
         <bndbox>
-            <xmin>361</xmin>
-            <ymin>215</ymin>
-            <xmax>399</xmax>
-            <ymax>414</ymax>
+            <xmin>245</xmin>
+            <ymin>206</ymin>
+            <xmax>284</xmax>
+            <ymax>406</ymax>
         </bndbox>
     </object>    <object>
         <name>Center</name>
@@ -50,10 +50,10 @@
         <truncated>0</truncated>
         <difficult>0</difficult>
         <bndbox>
-            <xmin>286</xmin>
-            <ymin>944</ymin>
-            <xmax>306</xmax>
-            <ymax>967</ymax>
+            <xmin>112</xmin>
+            <ymin>948</ymin>
+            <xmax>133</xmax>
+            <ymax>972</ymax>
         </bndbox>
     </object>
 </annotation>
