@@ -151,8 +151,18 @@ def run(img_dir, labels):
         caldf, cdf, sips = fqa.PDDCalibration(imfile=img_file_name, config=config, base=abase)
         ratcaldf = fqa.ratcalf(caldf)
 
-        DM = fqa.mayermltchprocf(imfile=img_file_name, config=config, ratcaldf=ratcaldf)
-        return DM
+        # Incorporar al estado de la aplicación
+        if caldf not in st.session_state:
+            st.session_state.caldf = caldf
+        if cddf not in st.session_state:
+            st.session_state.cddf = cddf
+        if fps not in st.session_state:
+            st.session_state.fps = fps
+
+        # Calcular la dosis
+        st.session_state.fDim = fqa.mayermltchprocf(imfile=img_file_name, config=config, ratcaldf=ratcaldf)
+        
+        return
 
     def red_process():
         config = fqa.readConfig(os.join.path('config', 'filmQAp.config'))
@@ -164,8 +174,18 @@ def run(img_dir, labels):
         caldf, cdf, sips = fqa.PDDCalibration(imfile=img_file_name, config=config, base=abase)
         ratcaldf = fqa.ratcalf(caldf)
 
-        DR = fqa.redprocf(imfile=img_file_name, config=config, ratcaldf=ratcaldf)
-        return DR
+         # Incorporar al estado de la aplicación
+        if caldf not in st.session_state:
+            st.session_state.caldf = caldf
+        if cddf not in st.session_state:
+            st.session_state.cddf = cddf
+        if fps not in st.session_state:
+            st.session_state.fps = fps
+
+        # Calcular la dosis
+        st.session_state.fDim = fqa.redprocf(imfile=img_file_name, config=config, ratcaldf=ratcaldf)
+
+        return 
 
     def green_process():
         config = fqa.readConfig(os.join.path('config', 'filmQAp.config'))
@@ -177,8 +197,18 @@ def run(img_dir, labels):
         caldf, cdf, sips = fqa.PDDCalibration(imfile=img_file_name, config=config, base=abase)
         ratcaldf = fqa.ratcalf(caldf)
 
-        DG = fqa.greenprocf(imfile=img_file_name, config=config, ratcaldf=ratcaldf)
-        return DG
+        # Incorporar al estado de la aplicación
+        if caldf not in st.session_state:
+            st.session_state.caldf = caldf
+        if cddf not in st.session_state:
+            st.session_state.cddf = cddf
+        if fps not in st.session_state:
+            st.session_state.fps = fps
+
+        # Calcular la dosis
+        st.session_state.fDim = fqa.greenprocf(imfile=img_file_name, config=config, ratcaldf=ratcaldf)
+
+        return
 
     def blue_process():
         config = fqa.readConfig(os.join.path('config', 'filmQAp.config'))
@@ -190,8 +220,17 @@ def run(img_dir, labels):
         caldf, cdf, sips = fqa.PDDCalibration(imfile=img_file_name, config=config, base=abase)
         ratcaldf = fqa.ratcalf(caldf)
 
-        DB = fqa.blueprocf(imfile=img_file_name, config=config, ratcaldf=ratcaldf)
-        return DB
+        # Incorporar al estado de la aplicación
+        if caldf not in st.session_state:
+            st.session_state.caldf = caldf
+        if cddf not in st.session_state:
+            st.session_state.cddf = cddf
+        if fps not in st.session_state:
+            st.session_state.fps = fps
+
+        # Calcular la dosis
+        st.session_state.fDim = fqa.blueprocf(imfile=img_file_name, config=config, ratcaldf=ratcaldf)
+        return 
         
     if rects:
         with st.sidebar:
