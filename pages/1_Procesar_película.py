@@ -163,7 +163,7 @@ def run(img_dir, labels):
         Dim = fqa.mayermltchprocf(imfile=img_file_name, config=config, ratcaldf=ratcaldf)
         st.session_state.fDim = Dim
         if 'fDim' in st.session_state:
-            fcols, frows, fchannels = Dim.shape
+            fcols, frows = Dim.shape
             st.session_state.fcols = fcols
             st.session_state.frows = frows
             st.success('Convertida a dosis la información de la película.')
@@ -192,7 +192,7 @@ def run(img_dir, labels):
         Dim = fqa.redprocf(imfile=img_file_name, config=config, ratcaldf=ratcaldf)
         st.session_state.fDim = Dim
         if 'fDim' in st.session_state:
-            fcols, frows, fchannels = Dim.shape
+            fcols, frows = Dim.shape
             st.session_state.fcols = fcols
             st.session_state.frows = frows
             st.success('Convertida a dosis la información de la película.')
@@ -221,7 +221,7 @@ def run(img_dir, labels):
         Dim = fqa.greenprocf(imfile=img_file_name, config=config, ratcaldf=ratcaldf)
         st.session_state.fDim = Dim
         if 'fDim' in st.session_state:
-            fcols, frows, fchannels = Dim.shape
+            fcols, frows = Dim.shape
             st.session_state.fcols = fcols
             st.session_state.frows = frows
             st.success('Convertida a dosis la información de la película.')
@@ -250,7 +250,7 @@ def run(img_dir, labels):
         Dim = fqa.blueprocf(imfile=img_file_name, config=config, ratcaldf=ratcaldf)
         st.session_state.fDim = Dim
         if 'fDim' in st.session_state:
-            fcols, frows, fchannels = Dim.shape
+            fcols, frows = Dim.shape
             st.session_state.fcols = fcols
             st.session_state.frows = frows
             st.success('Convertida a dosis la información de la película.')
