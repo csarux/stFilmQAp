@@ -160,9 +160,10 @@ def run(img_dir, labels):
             st.session_state.fps = sips
 
         # Calcular la dosis
-        st.session_state.fDim = fqa.mayermltchprocf(imfile=img_file_name, config=config, ratcaldf=ratcaldf)
+        Dim = fqa.mayermltchprocf(imfile=img_file_name, config=config, ratcaldf=ratcaldf)
+        st.session_state.fDim = Dim
         if 'fDim' in st.session_state:
-            fcols, frows, fchannels = st.session_state.fDim.shape
+            fcols, frows, fchannels = Dim.shape
             st.session_state.fcols = fcols
             st.session_state.frows = frows
             st.success('Convertida a dosis la información de la película.')
@@ -188,9 +189,10 @@ def run(img_dir, labels):
             st.session_state.fps = sips
 
         # Calcular la dosis
-        st.session_state.fDim = fqa.redprocf(imfile=img_file_name, config=config, ratcaldf=ratcaldf)
+        Dim = fqa.redprocf(imfile=img_file_name, config=config, ratcaldf=ratcaldf)
+        st.session_state.fDim = Dim
         if 'fDim' in st.session_state:
-            fcols, frows, fchannels = st.session_state.fDim.shape
+            fcols, frows, fchannels = Dim.shape
             st.session_state.fcols = fcols
             st.session_state.frows = frows
             st.success('Convertida a dosis la información de la película.')
@@ -216,9 +218,10 @@ def run(img_dir, labels):
             st.session_state.fps = sips
 
         # Calcular la dosis
-        st.session_state.fDim = fqa.greenprocf(imfile=img_file_name, config=config, ratcaldf=ratcaldf)
+        Dim = fqa.greenprocf(imfile=img_file_name, config=config, ratcaldf=ratcaldf)
+        st.session_state.fDim = Dim
         if 'fDim' in st.session_state:
-            fcols, frows, fchannels = st.session_state.fDim.shape
+            fcols, frows, fchannels = Dim.shape
             st.session_state.fcols = fcols
             st.session_state.frows = frows
             st.success('Convertida a dosis la información de la película.')
@@ -244,9 +247,10 @@ def run(img_dir, labels):
             st.session_state.fps = sips
 
         # Calcular la dosis
-        st.session_state.fDim = fqa.blueprocf(imfile=img_file_name, config=config, ratcaldf=ratcaldf)
+        Dim = fqa.blueprocf(imfile=img_file_name, config=config, ratcaldf=ratcaldf)
+        st.session_state.fDim = Dim
         if 'fDim' in st.session_state:
-            fcols, frows, fchannels = st.session_state.fDim.shape
+            fcols, frows, fchannels = Dim.shape
             st.session_state.fcols = fcols
             st.session_state.frows = frows
             st.success('Convertida a dosis la información de la película.')
