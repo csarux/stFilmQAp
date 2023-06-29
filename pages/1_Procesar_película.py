@@ -142,16 +142,56 @@ def run(img_dir, labels):
             st.error('Error: No se ha configurado el valor de la dosis máxima medible.')
 
     def mayer_process():
-        return
+        config = fqa.readConfig(os.join.path('config', 'filmQAp.config'))
+
+        img_file_name = os.join.path('img_dir', 'Film.tif')
+
+        abase = fqa.baseDetermination(imfile=img_file_name, config=config)
+
+        caldf, cdf, sips = fqa.PDDCalibration(imfile=img_file_name, config=config, base=abase)
+        ratcaldf = fqa.ratcalf(caldf)
+
+        DM = fqa.mayermltchprocf(imfile=img_file_name, config=config, ratcaldf=ratcaldf)
+        return DM
 
     def red_process():
-        return
+        config = fqa.readConfig(os.join.path('config', 'filmQAp.config'))
+
+        img_file_name = os.join.path('img_dir', 'Film.tif')
+
+        abase = fqa.baseDetermination(imfile=img_file_name, config=config)
+
+        caldf, cdf, sips = fqa.PDDCalibration(imfile=img_file_name, config=config, base=abase)
+        ratcaldf = fqa.ratcalf(caldf)
+
+        DR = fqa.redprocf(imfile=img_file_name, config=config, ratcaldf=ratcaldf)
+        return DR
 
     def green_process():
-        return
+        config = fqa.readConfig(os.join.path('config', 'filmQAp.config'))
+
+        img_file_name = os.join.path('img_dir', 'Film.tif')
+
+        abase = fqa.baseDetermination(imfile=img_file_name, config=config)
+
+        caldf, cdf, sips = fqa.PDDCalibration(imfile=img_file_name, config=config, base=abase)
+        ratcaldf = fqa.ratcalf(caldf)
+
+        DG = fqa.greenprocf(imfile=img_file_name, config=config, ratcaldf=ratcaldf)
+        return DG
 
     def blue_process():
-        return
+        config = fqa.readConfig(os.join.path('config', 'filmQAp.config'))
+
+        img_file_name = os.join.path('img_dir', 'Film.tif')
+
+        abase = fqa.baseDetermination(imfile=img_file_name, config=config)
+
+        caldf, cdf, sips = fqa.PDDCalibration(imfile=img_file_name, config=config, base=abase)
+        ratcaldf = fqa.ratcalf(caldf)
+
+        DB = fqa.blueprocf(imfile=img_file_name, config=config, ratcaldf=ratcaldf)
+        return DB
         
     if rects:
         with st.sidebar:
