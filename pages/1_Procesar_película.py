@@ -155,9 +155,9 @@ def run(img_dir, labels):
         if 'caldf' not in st.session_state:
             st.session_state.caldf = caldf
         if 'cddf' not in st.session_state:
-            st.session_state.cddf = cddf
+            st.session_state.cddf = cdf
         if 'fps' not in st.session_state:
-            st.session_state.fps = fps
+            st.session_state.fps = sips
 
         # Calcular la dosis
         st.session_state.fDim = fqa.mayermltchprocf(imfile=img_file_name, config=config, ratcaldf=ratcaldf)
@@ -178,9 +178,9 @@ def run(img_dir, labels):
         if 'caldf' not in st.session_state:
             st.session_state.caldf = caldf
         if 'cddf' not in st.session_state:
-            st.session_state.cddf = cddf
+            st.session_state.cddf = cdf
         if 'fps' not in st.session_state:
-            st.session_state.fps = fps
+            st.session_state.fps = sips
 
         # Calcular la dosis
         st.session_state.fDim = fqa.redprocf(imfile=img_file_name, config=config, ratcaldf=ratcaldf)
@@ -201,9 +201,9 @@ def run(img_dir, labels):
         if 'caldf' not in st.session_state:
             st.session_state.caldf = caldf
         if 'cddf' not in st.session_state:
-            st.session_state.cddf = cddf
+            st.session_state.cddf = cdf
         if 'fps' not in st.session_state:
-            st.session_state.fps = fps
+            st.session_state.fps = sips
 
         # Calcular la dosis
         st.session_state.fDim = fqa.greenprocf(imfile=img_file_name, config=config, ratcaldf=ratcaldf)
@@ -224,9 +224,9 @@ def run(img_dir, labels):
         if 'caldf' not in st.session_state:
             st.session_state.caldf = caldf
         if 'cddf' not in st.session_state:
-            st.session_state.cddf = cddf
+            st.session_state.cddf = cdf
         if 'fps' not in st.session_state:
-            st.session_state.fps = fps
+            st.session_state.fps = sips
 
         # Calcular la dosis
         st.session_state.fDim = fqa.blueprocf(imfile=img_file_name, config=config, ratcaldf=ratcaldf)
