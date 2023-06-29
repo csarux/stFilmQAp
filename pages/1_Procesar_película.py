@@ -152,11 +152,11 @@ def run(img_dir, labels):
         ratcaldf = fqa.ratcalf(caldf)
 
         # Incorporar al estado de la aplicación
-        if caldf not in st.session_state:
+        if 'caldf' not in st.session_state:
             st.session_state.caldf = caldf
-        if cddf not in st.session_state:
+        if 'cddf' not in st.session_state:
             st.session_state.cddf = cddf
-        if fps not in st.session_state:
+        if 'fps' not in st.session_state:
             st.session_state.fps = fps
 
         # Calcular la dosis
@@ -175,11 +175,11 @@ def run(img_dir, labels):
         ratcaldf = fqa.ratcalf(caldf)
 
          # Incorporar al estado de la aplicación
-        if caldf not in st.session_state:
+        if 'caldf' not in st.session_state:
             st.session_state.caldf = caldf
-        if cddf not in st.session_state:
+        if 'cddf' not in st.session_state:
             st.session_state.cddf = cddf
-        if fps not in st.session_state:
+        if 'fps' not in st.session_state:
             st.session_state.fps = fps
 
         # Calcular la dosis
@@ -198,11 +198,11 @@ def run(img_dir, labels):
         ratcaldf = fqa.ratcalf(caldf)
 
         # Incorporar al estado de la aplicación
-        if caldf not in st.session_state:
+        if 'caldf' not in st.session_state:
             st.session_state.caldf = caldf
-        if cddf not in st.session_state:
+        if 'cddf' not in st.session_state:
             st.session_state.cddf = cddf
-        if fps not in st.session_state:
+        if 'fps' not in st.session_state:
             st.session_state.fps = fps
 
         # Calcular la dosis
@@ -221,11 +221,11 @@ def run(img_dir, labels):
         ratcaldf = fqa.ratcalf(caldf)
 
         # Incorporar al estado de la aplicación
-        if caldf not in st.session_state:
+        if 'caldf' not in st.session_state:
             st.session_state.caldf = caldf
-        if cddf not in st.session_state:
+        if 'cddf' not in st.session_state:
             st.session_state.cddf = cddf
-        if fps not in st.session_state:
+        if 'fps' not in st.session_state:
             st.session_state.fps = fps
 
         # Calcular la dosis
