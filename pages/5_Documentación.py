@@ -8,64 +8,39 @@ with colc:
 
     st.markdown(
     '''
-    `FilmQAp` es una aplicación para procesar películas radiocrómicas mediante un esquema de digitalización única (*SSP, single scan protocol*) utilizando un algoritmo multicanal de promedios no locales. La calibración del algoritmo emplea un modelo de crecimiento con la dosis de dos tipos de absorbentes particularizado a las condiciones presentes durante la digitalización. El algoritmo corrige el efecto lateral del escáner.
+    `chromLit` es una aplicación para procesar películas radiocrómicas mediante un esquema de digitalización única (*SSP, single scan protocol*) utilizando un algoritmo multicanal de promedios no locales. La calibración del algoritmo emplea un modelo de crecimiento con la dosis de dos tipos de absorbentes particularizado a las condiciones presentes durante la digitalización. El algoritmo corrige el efecto lateral del escáner.
 
-    La información dosimétrica se genera en `dxf` (formato de archivos de intercambio de información de Varian). Estos archivos se pueden importar en la aplicación **Portal Dosimetry** para su posterior análisis y registro.
+    `chromLit` genera la información de la dosis medida en archivos `dxf` (formato de intercambio de información de Varian). Estos archivos se pueden importar en la aplicación **Portal Dosimetry** para su posterior análisis y registro. `dxf` es una archivo de texo de tipo `csv` que puede ser importado y analizado por otros medios. Alternativamente `chromLit` también puede exportar la información procesada como un plano de dosis en formato `DICOM`.
 
-    Esta documentación describe el procedimiento para completar un control de calidad paciente específico mediante *dosimetría fotográfica* y `FilmQAp`.
+    Esta documentación describe el procedimiento para completar una medida de una distribución espacial de dosis empleando películas radiocrómicas procesadas mediante `chromLit`.
+
+    '''
+    )
+
+    st.header('Esquema de digitalización única')
+
+    st.markdown(
+    '''
+    Para calibrar el sistema en la misma digitalización en la que se realiza la medida es necesario leer junto con la película problema otras muestras adicionales. `chromLit` espera que se introduzca una muestra de película sin irradiar para establecer el fondo y una película irradiada de forma controlada con valores conocidos de dosis para establecer los parámetros lineales del modelo sensitométrico. Estos parámetros particularizan la respuesta del sistema en el momento de la lectura.
+
+    Para reducir la incertidumbre en la determinación de estos parámetros es recomendable emplear una película que registre la atenuación de un haz de radiación bajo condiciones conocidas, un rendimiento en profundidad de un haz de fotones por ejemplo. Esta documentación se basa en esta recomendación pero otras distribuciones de dosis son posible. Estrictamente `chromLit` solo requiere conocer los valores de dosis con los que se ha irradiado la película de calibración independientemente de cómo se haya generado. La forma de describir las dosis de calibración es mediante una tabla en un archivo Excel en el que se dan coordenadas espaciales y valores de dosis.
+    '''
+    )
+   
+
+    st.markdown(
+    '''
     '''
     )
 
     st.header('Procedimiento')
 
-    st.subheader(' Cálculo del plano de dosis en el planificador')
-
-    st.markdown(
-    '''
-    En Eclipse desde el plan que se quiere medir, seleccionar Create Verification Plan y seguir el procedimiento del planificador.
-
-    La selección de planos de dosis en Eclipse requiere que el plano contenga el isocentro de un campo como referencia. Si se quiere seleccionar un plano que no contenga el isocentro del plan de tratamiento es necesario añadir un campo con peso 0 con su isocentro situado sobre el plano de interés y centrado en el plano de dosis.
-    '''
-    )
-
-    img = Image.open('Images/PlaneSelection.jpg')
-    st.image(img, caption='Selección de planes en Eclipse')
-
-    st.markdown(
-    '''
-    En la imagen anterior a un plan HyperArc se le han añadido dos campos para exportar planos sagitales desplazados 1 cm respecto al centro del maniquí. Los campos se han centrado en x = 0 , y = +1, z = 0, y en  x = 0 , y = -1, z = 0
-
-    Calcular la distribución de dosis y seleccionar la ventana que contenga el plano que se quiere exportar. Registrar si se trata de un plano axial, sagital o coronal. En la imagen anterior puede verse que la ventana iluminada es la que corresponde a los planos sagitales.
-
-    Con el botón derecho sobre el icono Dose ir a la opción Export Dose Plan.
-
-    '''
-    )
-    img = Image.open('Images/ExportDosePlane.jpg')
-    st.image(img, caption='Exportación de dosis en Eclipse')
-
-    st.markdown(
-    '''
-    Seleccionar dosis absoluta y el campo que tiene su isocentro situado sobre el plano que se exporta. No activar la opción del marcado de la película. Indicar las dimensiones del plano que se exporta, normalmente 16 cm por 16 cm. Una resolución espacial razonable es 1 pixel por milímetro.
-    '''
-    )
-    img = Image.open('Images/ExportDosePlaneOptions.jpg')
-    st.image(img, caption='Selección de las opciones de exportación')
-
-    st.markdown(
-    '''
-    En la ventana de configuración de la exportación se puede seleccionar la carpeta en la que se exporta el plano de dosis, que debería ser la carpeta del paciente en Radiofisica\Medidas Pacientes\IMRT
-    '''
-    )
-    img = Image.open('Images/ExportDosePlaneConfigureOptions.jpg')
-    st.image(img, caption='Configuración de las opciones de exportación en Eclipse')
-
     st.subheader('Preparación de la película para la medida')
     st.markdown(
     '''
-    El tamaño de las películas con las que se mide está limitado por el tamaño del maniquí sobre el que se ha calculado el plan de verificación. Sí es posible irradiar películas de un tamaño inferior si se desea.
+    El tamaño de las películas con las que se mide está limitado por el tamaño del maniquí que las va a contener. Sí es posible irradiar películas de un tamaño inferior si se desea.
 
-    Cortar la película con las dimensiones del plan calculado, normalmente un cuadrado de 16 cm por 16 cm.
+    Cortar la película con las dimensiones deseadas. Por ejemplo, para el maniquí I'mRT normalmente un cuadrado de 16 cm por 16 cm.
     '''
     )
 
@@ -78,7 +53,7 @@ with colc:
 
     st.markdown(
     '''
-    Antes de cortar la película marcar las esquinas superiores de las áreas a cortar y restantes con un guión que sea paralelo a la dimensión estrecha de la película original. Ver la siguiente ilustración
+    La película presenta al ser leída una respuesta diferente dependiendo de su orientación respecto al escáner. Para que el procedimiento funcione correctamente es necesario mantener un mismo criterio de orientación para la calibración y la medida. Para ello, antes de cortar la película marcar las esquinas superiores de las áreas a cortar y restantes con un guión que sea paralelo a la dimensión estrecha de la película original. Ver la siguiente ilustración
     '''
     )
 
