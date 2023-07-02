@@ -5,7 +5,7 @@ import seaborn as sns
 import streamlit as st
 st.set_page_config(page_title='FilmQAp', layout="wide")
 
-st.title('5. Calibración')
+st.title('Calibración')
 
 config = configparser.ConfigParser()
 configfile='config/filmQAp.config'
