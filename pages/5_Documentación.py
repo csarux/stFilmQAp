@@ -10,6 +10,8 @@ with colc:
     '''
     `chromLit` es una aplicación para procesar películas radiocrómicas mediante un esquema de digitalización única (*SSP, single scan protocol*) utilizando un algoritmo multicanal de promedios no locales. La calibración del algoritmo emplea un modelo de crecimiento con la dosis de dos tipos de absorbentes particularizado a las condiciones presentes durante la digitalización. El algoritmo corrige el efecto lateral del escáner.
 
+    En este [video](https://youtu.be/Oq-mgwh8iR8) se muestra el flujo de trabajo en `chromLit`.
+
     `chromLit` genera la información de la dosis medida en archivos `dxf` (formato de intercambio de información de Varian). Estos archivos se pueden importar en la aplicación **Portal Dosimetry** para su posterior análisis y registro. `dxf` es una archivo de texo de tipo `csv` que puede ser importado y analizado por otros medios. Alternativamente `chromLit` también puede exportar la información procesada como un plano de dosis en formato `DICOM`.
 
     Esta documentación describe el procedimiento para completar una medida de una distribución espacial de dosis empleando películas radiocrómicas procesadas mediante `chromLit`.
