@@ -418,4 +418,57 @@ with colc:
     '''
     )
 
+    st.subheader('Calibration')
+    
+    st.markdown(
+    '''     
+    | **Parámetro** | **Significado** |
+    |----------|---------|
+    | mode     | Modo de calibración. Valor por defecto: **PDD**. *Informativo*  |
+    | dmax     | Dosis máxima en la distribución de calibración.       |
+    | energy   | Energía del haz de calibración. Valor por defecto: **6**. *Informativo*| 
+    | eunit    | Unidad en la que se da la energía del haz de calibración. Valor por defecto: **MV**. *Informativo*     |
+    | unit     | Unidad de longitud en la que dan las dimensiones y localización del haz de calibración. Valor por defecto: **cm**. *Informativo*  |
+    | fieldwidth     | Anchura del haz de calibración. Valor por defecto: **10**      |
+    | fieldheigth    | Alto del haz de calibración. Valor por defecto: **10**      |
+    | um       | Unidades monitor de la irradiación de calibración. *Informativo*| 
+    | dfs      | Distancia fuente superficie fijada para el montaje de calibración. Valor por defecto: **75**. *Informativo*     |
+    | path     | Ruta relativa a la localización del archivo de calibración. Valor por defecto: **./config/**. *Informativo*  |
+    | file     | Nombre del archivo Excel de calibración. Valor por defecto: **PDDCalib.xlsx**. *Informativo*       |
+    | sheet    | Hoja en la que se encuentran los datos de calibracicón. Valor por defecto: **Hoja1**. *Informativo*| 
+    | shift    | Desplazamiento hasta el comienzo de los datos. Valor por defecto: **1**. *Informativo*     |
+    | depthmin | Profundidad mínima considerada en la calibración. Tiene en cuenta el espesor de plástico que rodea a la película en el maniquí de medida más un margen para evitar efectos de borde. Valor por defecto: **2**. *Informativo*   |
+    | depthmin | Profundidad máxima considerada en la calibración. Tiene en cuenta el espesor de plástico que rodea a la película en el maniquí de medida más un margen para evitar efectos de borde. Valor por defecto: **2**. *Informativo*   | '''
+    )
+
+    st.subheader('NonLocalMeans')
+    
+    st.markdown(
+    '''     
+    | **Parámetro** | **Significado** |
+    |----------|---------|
+    | patchsize     | Tamaño en píxeles de la región considerada para reducir ruido. Valor por defecto: **3**. *Informativo*  |
+    | patchdistance | Distancia máxima en píxeles donde buscar regiones para reducir ruido. Valor por defecto: **10**. *Informativo* |
+    | h             | Parámetro de filtrado. Cuanto más alto más regiones se consideran. Valor por defecto: **0.05**. *Informativo*| 
+    | multichannel  | Variable booleana que indica si el algoritmo considera o no simultaneamente la información de los tres canales de color. Valor por defecto: **True**. *Informativo*     |
+    | channelaxis   | Índice del canal de color. Valor por defecto: **2**. *Informativo*  |
+    | wred          | Peso de la dosis correspondiente al canal rojo en el promedio de la dosis. Valor por defecto: **10**. *Informativo*     |
+    | wgreen        | Peso de la dosis correspondiente al canal verde en el promedio de la dosis. Valor por defecto: **5**. *Informativo*     |
+    | wblue         | Peso de la dosis correspondiente al canal azul en el promedio de la dosis. Valor por defecto: **1**. *Informativo*      |
+    '''
+    )
+
+    st.subheader('Demographics')
+    
+    st.markdown(
+    '''     
+    | **Parámetro** | **Significado** |
+    |----------|---------|
+    | patientid     | Identificación del paciente, normalmente el número de historia. Valor por defecto: **Demo001**. *Informativo*  |
+    | patientname   | Nombre de pila del paciente. Valor por defecto: **Test**. *Informativo* |
+    | patientfamilyname | Apellido del paciente. Valor por defecto: **chromLit**. *Informativo*| 
+    | gender        | Sexo del paciente. Valor por defecto: **M**. *Informativo*     |
+    '''
+    )
+
 
