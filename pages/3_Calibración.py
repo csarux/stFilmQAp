@@ -80,7 +80,7 @@ with colr:
 
 with colh:
     fig, ax = plt.subplots()
-    ax.hist(cddf['uDr_%'], bins=10)
+    ax.hist(cddf['uDr_%'], bins=15)
 
     ax.set_xlabel('Residuo relativo [%]')
     ax.set_ylabel('Cuentas')
