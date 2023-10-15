@@ -22,8 +22,13 @@ from pathlib import Path
 import numpy as np
 # - Data mamaging
 import pandas as pd
+# - Binary files
+from io import BytesIO
 # - DICOM files editing
 import pydicom as dicom
+from pydicom import dcmread, dcmwrite
+from pydicom.filebase import DicomFileLike
+from pydicom.uid import generate_uid
 # - TIFF files
 from tifffile import TiffFile
 from tifffile import imread as timread, imwrite as timwrite
@@ -57,6 +62,28 @@ import streamlit as st
 
 
 # Funcion definitions
+
+def readConfig(configFile=None):
+    """
+    A function to read the config file
+
+    ...
+
+    Attributes
+    ----------
+    configFile : Path
+        The path of the config file
+
+    Returns
+    -------
+    config : ConfiPparser
+        A ConfigParser object containing the app config information
+    """
+
+    config = configparser.ConfigParser()
+    config.read(configFile)
+
+    return config
 
 def HeaderCreator(DataOriginDateTime='', AcqType='Acquired Portal', PatientId1='', PatientId2='', LastName='', FirstName='', pxsp=[], imsz=[]):
     """
@@ -173,59 +200,6 @@ def HeaderCreator(DataOriginDateTime='', AcqType='Acquired Portal', PatientId1='
     return header
 
 
-def dxfString(Data=None, AcqType='Acquired Portal', PatientId1='', PatientId2='', LastName='', FirstName='', pxsp=[], imsz=[], DataOriginDateTime=''):
-    """
-    A function to output the dxf string
-
-    ...
-
-    Attributes
-    ----------
-    Data : 2D numpy array
-        The data to be exported
-
-    AcqType : str
-        The type of the orgin data: acquired or predicted
-
-    PatientId1 : str
-        The first patient identification
-
-    PatientId2 : str
-        The second patient identification
-
-    LastName : str
-        The patient family name
-
-    First Name : str
-        The patient given name
-
-    pxsp : list
-        A list with the pixel spacing in mm
-
-    imsz : list
-        A list with the image size in pixels
-
-    DataOriginDateTime: str
-        The date and time creation of the data origin
-
-     Returns
-    -------
-    dxfstr : str
-        The dxf string
-    """
-
-    # Write the header
-    headerstr = HeaderCreator(DataOriginDateTime=DataOriginDateTime, AcqType=AcqType, PatientId1=PatientId1, PatientId2=PatientId2, LastName=LastName, FirstName=FirstName, pxsp=pxsp, imsz=imsz)
-
-    # Write the data
-    df = pd.DataFrame(Data)
-    datastr = df.to_csv(sep='\t', header=False, index=False, float_format='%.2f')
-
-    # Write the dxf string
-    dxfstr = headerstr + datastr
-
-    return dxfstr
-
 def dxfWriter(Data=None, dxfFileName='Film.dxf', AcqType='Acquired Portal', PatientId1='', PatientId2='', LastName='', FirstName='', pxsp=[], imsz=[], DataOriginDateTime=''):
     """
     A function to write the dxf file
@@ -279,6 +253,170 @@ def dxfWriter(Data=None, dxfFileName='Film.dxf', AcqType='Acquired Portal', Pati
         # Write the data
         df.to_csv(dxf, sep='\t', header=False, index=False, float_format='%.2f')
 
+def dxfString(Data=None, AcqType='Acquired Portal', PatientId1='', PatientId2='', LastName='', FirstName='', pxsp=[], imsz=[], DataOriginDateTime=''):
+    """
+    A function to output the dxf string
+
+    ...
+
+    Attributes
+    ----------
+    Data : 2D numpy array
+        The data to be exported
+
+    AcqType : str
+        The type of the orgin data: acquired or predicted
+
+    PatientId1 : str
+        The first patient identification
+
+    PatientId2 : str
+        The second patient identification
+
+    LastName : str
+        The patient family name
+
+    First Name : str
+        The patient given name
+
+    pxsp : list
+        A list with the pixel spacing in mm
+
+    imsz : list
+        A list with the image size in pixels
+
+    DataOriginDateTime: str
+        The date and time creation of the data origin
+
+     Returns
+    -------
+    dxfstr : str
+        The dxf string
+    """
+
+    # Write the header
+    headerstr = HeaderCreator(DataOriginDateTime=DataOriginDateTime, AcqType=AcqType, PatientId1=PatientId1, PatientId2=PatientId2, LastName=LastName, FirstName=FirstName, pxsp=pxsp, imsz=imsz)
+
+    # Write the data
+    df = pd.DataFrame(Data)
+    datastr = df.to_csv(sep='\t', header=False, index=False, float_format='%.2f')
+
+    # Write the dxf string
+    dxfstr = headerstr + datastr
+
+    return dxfstr
+
+def write_dataset_to_bytes(dataset):
+    """
+    Function to convert a DICOM dataset into a byte string
+
+    ...
+
+    Attributes
+    ----------
+    dataset : DICOM dataset
+        The dataset to be converted
+
+     Returns
+    -------
+    memory_dataset: BinaryIO
+        A binary string cotaining the DICOM dataset
+
+    """ 
+    with BytesIO() as buffer:
+        # create a DicomFileLike object that has some properties of DataSet
+        memory_dataset = DicomFileLike(buffer)
+        # write the dataset to the DicomFileLike object
+        dcmwrite(memory_dataset, dataset, write_like_original=False)
+        # to read from the object, you have to rewind it
+        memory_dataset.seek(0)
+        # read the contents as bytes
+        return memory_dataset.read()
+
+def getMediaStorageSOPInstanceUID(binIODataSet=None):
+    """
+    Function to read the media storage SOP instance UID from a DICOM dataset
+
+    ...
+
+    Attributes
+    ----------
+    binIODataSet : BinaryIO
+        A binary string cotaining the DICOM dataset
+
+     Returns
+    -------
+    mediaStorageSOPInstanceUID: String
+        A string cotaining the DICOM dataset media storage SOP instance UID
+
+    """ 
+    readds = dcmread(BytesIO(binIODataSet))
+    mediaStorageSOPInstanceUID = readds.file_meta.MediaStorageSOPInstanceUID
+
+    return mediaStorageSOPInstanceUID
+
+def dcmWriter(Data=None, imfile=None, config=None):
+    """
+    Function to write a binary string containing the RT dose plane DICOM file
+
+    ...
+
+    Attributes
+    ----------
+    Data : 2D numpy array
+        The data to be exported
+
+    imfile : str
+        The name of the scan image with the measured dose distribution, the calibration strip and the background patch
+
+    config : ConfigParser
+        An object with the functionalities of the configparser module
+
+
+     Returns
+    -------
+    dsBinStr: BinaryIO
+        A binary string cotaining the RT dose plane DICOM file
+
+    """ 
+    # Read a dose plane DICOM file to use as template
+    ds = dcmread('img_dir/DosePlaneTemplate.dcm')
+
+    # Modify the template
+    ds.SOPInstanceUID = generate_uid()
+    ds.file_meta.MediaStorageSOPClassUID = ds.SOPInstanceUID
+    ds.StudyInstanceUID = generate_uid()
+    ds.SeriesInstanceUID = generate_uid()
+    ds.FrameOfReferenceUID = generate_uid(prefix=None)
+    #ds.PlanReferencedSOPInstanceUID = generate_uid()
+    ds.StudyDate = datetime.now().strftime('%Y%m%d')
+    ds.StudyTime = datetime.now().strftime('%H%M%S.%f')
+    ds.Manufacturer = 'pychromic'
+    ds.StationName = ''
+    ds.StudyDescription='Radiohromic Dosimetry'
+    ds.SeriesDescription='Dose Plane'
+    ds.PhysiciansOfRecord = ''
+    ds.ManufacturerModelName = 'chromLit'
+
+    ds.PatientName = config['Demographics']['patientfamilyname'] + '^' + config['Demographics']['patientname']
+    ds.PatientID = config['Demographics']['patientid']
+    ds.PatientBirthDate = ''
+    ds.PatientBirthTime = ''
+    ds.PatientSex = config['Demographics']['gender']
+    ds.OtherPatientIDs = config['Demographics']['patientid']
+
+    dosef = Data
+
+    ds.Rows, ds.Columns = dosef.shape
+    ds.PixelSpacing = TIFFPixelSpacing(imfile)
+    ds.DoseComment = 'QA Film'
+    ds.DoseGridScaling = str(dosef.max()**-1*1e-5)
+    ds.PixelData = (np.array(dosef/float(ds.DoseGridScaling), np.uint32)).tobytes()
+
+    dsBinStr = write_dataset_to_bytes(ds)
+
+    return dsBinStr
+
 def dcm2dxf(dcmf=None, config=None):
     """
     A function to convert RT Dose DICOM files to dxf format
@@ -304,10 +442,7 @@ def dcm2dxf(dcmf=None, config=None):
     PatientId1 = dcmf.PatientID
     PatientId2 = ''
     PatientName = str(dcmf.PatientName)
-    PatientNames = PatientName.split('^')
-    LastName, FirstName = PatientNames[0], PatientNames[1]
-    if len(PatientNames) == 3:
-        FirstName = PatientNames[1] + ' ' + PatientNames[2]
+    LastName, FirstName = PatientName.split('^')
     demodict = {'PatientId1' : PatientId1, 'PatientId2' : PatientId2, 'LastName' : LastName, 'FirstName' : FirstName}
     pxsp = dcmf.PixelSpacing
     imsz = [dcmf.Rows, dcmf.Columns]
@@ -394,6 +529,23 @@ def calf(D, f, phir, kr, phib, kb):
 
     return f + phir * (1-np.exp(-kr*D)) + phib * (1-np.exp(-kb*D))
 
+def getDmax(config=None):
+    """
+    Function getting the Dose max value set in the config file
+
+    Attributes
+    ----------
+    config : ConfigParser
+        An object with the functionalities of the configparser module
+    Returns
+    -------
+    Dmax : float64
+        The highest dose to measure by the film
+
+    """
+    return np.float64(config['DosePlane']['dmax'])
+
+
 def iratf(d, a, b, c):
     """
     The calibration function following a sensitometric model bases in rational functions
@@ -423,6 +575,70 @@ def iratf(d, a, b, c):
 
     return (a - c * 10**-d)/(10**-d - b)
 
+def iratSf(S, a, b, c, Sb):
+    """
+    Calibration function following a sensitometric model bases on rational functions using the digital signal as variable
+    
+    ...
+    
+    Attributes
+    ----------
+    S : unsigned int 16
+        The digital signal measured by the scanner in every color channel
+        
+    a : float64
+        First rational function parameter
+        
+    b : float64
+        Second rational function parameter
+    
+    c : float64
+        Third rational function parameter
+        
+    Sb : unsigned int 16
+        The base digital signal determined for the film
+
+    Returns
+    -------
+    D : float64
+        The abosrbed dose D corresponding to the digital signal S in each channel following the sensitometry model based on rational functions
+    
+    """
+    
+    return (a - c * S/Sb)/(S/Sb - b)
+    
+def deriv_iratSf(S, a, b, c, Sb):
+    """
+    Derivative of the calibration function following a sensitometric model bases on rational functions using the digital signal as variable
+    
+    ...
+    
+    Attributes
+    ----------
+    S : unsigned int 16
+        The digital signal measured by the scanner in every color channel
+        
+    a : float64
+        First rational function parameter
+        
+    b : float64
+        Second rational function parameter
+    
+    c : float64
+        Third rational function parameter
+        
+    Sb : unsigned int 16
+        The base digital signal determined for the film
+
+    Returns
+    -------
+    D : float64
+        The abosrbed dose D corresponding to the digital signal S in each channel following the sensitometry model based on rational functions
+    
+    """
+    
+    return (c * S/Sb * (1 - 1/Sb) + c * b/Sb - a)/(S/Sb - b)**2
+    
 def coordOAC(imfile=None, bbfile='./tmp/bb.csv'):
     """
     A function to calculate the relavant coordiantes for the off-axis spatial correction
@@ -649,7 +865,7 @@ def readCalParms(config=None):
 
     """
 
-    configpath = './config/'
+    configpath = config['DEFAULT']['configpath']
     modelsfile = config['Models']['File']
     modelsheet = config['Models']['mphSheet']
 
@@ -676,7 +892,7 @@ def readRatParms(config=None):
 
     """
 
-    configpath = './config/'
+    configpath = config['DEFAULT']['configpath']
     modelsfile = config['Models']['File']
     modelsheet = config['Models']['racSheet']
     ratdf = pd.read_excel(configpath + modelsfile, sheet_name=modelsheet)
@@ -853,7 +1069,7 @@ def PDDCalibration(config=None, imfile=None, base=None):
     """
 
     # Read the calculated calibration absorbed dose distributiom (PDD)
-    pddcalibfile = './config/' + config['Calibration']['File']
+    pddcalibfile = config['Calibration']['Path'] + config['Calibration']['File']
     cdf = pd.read_excel(pddcalibfile)
 
     # Read the calibration image segment data
@@ -902,7 +1118,7 @@ def PDDCalibration(config=None, imfile=None, base=None):
     cdf.dropna(inplace=True)
 
     # Read the standard calibration parameters (multiphse model)
-    configpath = './config/'
+    configpath = config['DEFAULT']['configpath']
     modelsfile = config['Models']['File']
     modelsheet = config['Models']['mphSheet']
     caldf = pd.read_excel(configpath + modelsfile, sheet_name=modelsheet)
@@ -1137,7 +1353,7 @@ def mphspcnlmprocf(imfile=None, config=None, caldf=None, ccdf=None):
     bcalps = caldf.iloc[2].values
 
     # Spatial correction functions
-    recadc = np.load('./config/' + config['Models']['oadcFile'], allow_pickle=True)
+    recadc = np.load(config['DEFAULT']['configpath'] + config['Models']['oadcFile'], allow_pickle=True)
     phiRrf = recadc[0, 0].item()
     phiGrf = recadc[0, 1].item()
     phiBrf = recadc[0, 2].item()
@@ -1271,7 +1487,7 @@ def premphspcnlmprocf(imfile=None, config=None, caldf=None, ccdf=None):
     bcalps = caldf.iloc[2].values
 
     # Spatial correction functions
-    recadc = np.load('./config/' + config['Models']['oadcFile'], allow_pickle=True)
+    recadc = np.load(config['DEFAULT']['configpath'] + config['Models']['oadcFile'], allow_pickle=True)
     phiRrf = recadc[0, 0].item()
     phiGrf = recadc[0, 1].item()
     phiBrf = recadc[0, 2].item()
@@ -1383,7 +1599,7 @@ def mphspcnlmprocf_multiprocessing(imfile=None, config=None, caldf=None, ccdf=No
     bcalps = caldf.iloc[2].values
 
     # Spatial correction functions
-    scfile = './config/'+config['Models']['oadcFile']
+    scfile = config['DEFAULT']['configpath']+config['Models']['oadcFile']
     recadc = np.load(scfile, allow_pickle=True)
     phiRrf = recadc[0, 0].item()
     phiGrf = recadc[0, 1].item()
@@ -1442,9 +1658,9 @@ def mphspcnlmprocf_multiprocessing(imfile=None, config=None, caldf=None, ccdf=No
     dimcols = [dim[:, y, :] for y in np.arange(dim.shape[1])]
     xc = np.abs(ccdf.o - ccdf.c) * ccdf.s / 25.4
     xl = [np.abs(ccdf.o - (ccdf.p0 + col)) * ccdf.s / 25.4 for col, dimcol in enumerate(dimcols)]
-    colsrcalps = np.array([rcalps * np.array([1, phiRrf(x)/phiRrf(xc), 1, phiRbf(x)/phiRbf(xc), 1]) for x in xl], dtype=object)
-    colsgcalps = np.array([gcalps * np.array([1, phiGrf(x)/phiGrf(xc), 1, phiGbf(x)/phiGbf(xc), 1]) for x in xl], dtype=object)
-    colsbcalps = np.array([bcalps * np.array([1, phiBrf(x)/phiBrf(xc), 1, phiBbf(x)/phiBbf(xc), 1]) for x in xl], dtype=object)
+    colsrcalps = np.array([rcalps * np.array([1, phiRrf(x)/phiRrf(xc), 1, phiRbf(x)/phiRbf(xc), 1], dtype=object) for x in xl], dtype=object)
+    colsgcalps = np.array([gcalps * np.array([1, phiGrf(x)/phiGrf(xc), 1, phiGbf(x)/phiGbf(xc), 1], dtype=object) for x in xl], dtype=object)
+    colsbcalps = np.array([bcalps * np.array([1, phiBrf(x)/phiBrf(xc), 1, phiBbf(x)/phiBbf(xc), 1], dtype=object) for x in xl], dtype=object)
 
     with Pool(None) as p:
         Dim = np.array(
@@ -1454,7 +1670,7 @@ def mphspcnlmprocf_multiprocessing(imfile=None, config=None, caldf=None, ccdf=No
                               [[dimcol,
                                 colsrcalps[col], colsgcalps[col], colsbcalps[col],
                                 rratps, gratps, bratps] for col, dimcol in enumerate(dimcols)]
-                     ), total=len(dimcols), st_container=st.sidebar, desc='Procecesando la película:'
+                     ), total=len(dimcols), st_container=st.sidebar, desc='Procecesando la película'
                 )
             )
         )
@@ -1538,3 +1754,405 @@ def postmphspcnlmprocf(Dim=None, config=None):
 
     # Return the dose image
     return mphspcnlmprocim
+
+def mayermltchprocf_b(imfile=None, config=None, caldf=None):
+    """
+    A function to process the dose distribution image using the Mayer implementation of the Micke multichannel method
+    
+    ...
+    
+    Attributes
+    ----------
+    imfile : str
+        The name of the image file, the file containing the scanned image of the dose distribution, the calibration strip and the base strip in TIFF format.
+        
+    config : ConfigParser
+        An object with the functionalities of the configparser module
+
+    caldf : pandas DataFrame
+        The current scan calibration parameters
+        
+    
+    Returns
+    -------
+    Dopt : 2D numpy arrray 
+        The dose distribution
+    """
+    
+    dosefilename = Path(imfile)
+    dosefilename = dosefilename.with_suffix('.Film.tif')
+    
+    # Read the scanned dose image, and split the digital signal of each channel
+    im = imread(dosefilename)
+    Rim = im[..., 0]
+    Gim = im[..., 1]
+    Bim = im[..., 2]
+    
+    # Current multiphase calibration parameters
+    rcalps = caldf.iloc[0].values
+    gcalps = caldf.iloc[1].values
+    bcalps = caldf.iloc[2].values
+
+    # Background signal for every color channel
+    SbR, SbG, SbB = 2**16/10**rcalps[0], 2**16/10**gcalps[0], 2**16/10**bcalps[0]
+    
+    # Rational approximation
+    
+    # Define models
+    rratfmodel = Model(iratf)
+    gratfmodel = Model(iratf)
+    bratfmodel = Model(iratf)
+    
+    # Initialize parameters
+    rratparams = rratfmodel.make_params(
+        a = 0.1,
+        b = 0.1,
+        c = 0.1
+    )
+    
+    gratparams = gratfmodel.make_params(
+        a = 0.1,
+        b = 0.1,
+        c = 0.1
+    )
+    
+    bratparams = bratfmodel.make_params(
+        a = 0.1,
+        b = 0.1,
+        c = 0.1
+    ) 
+    
+    
+    # Generate calibration points
+    
+    vDrat = np.array([0.5, 0.75, 1., 1.25, 1.5, 2., 3., 4., 5., 7., 9.])
+    
+    vdrrat =  calf(vDrat, *rcalps)
+    vdgrat =  calf(vDrat, *gcalps)
+    vdbrat =  calf(vDrat, *bcalps)
+    
+    # Fit
+    rratfit = rratfmodel.fit(data=vDrat, params=rratparams, d=vdrrat)
+    gratfit = gratfmodel.fit(data=vDrat, params=gratparams, d=vdgrat)
+    bratfit = bratfmodel.fit(data=vDrat, params=bratparams, d=vdbrat)
+    
+    # Rational calibration paramters
+    aR, bR, cR = [k.value for k in rratfit.params.values()]
+    aG, bG, cG = [k.value for k in gratfit.params.values()]
+    aB, bB, cB = [k.value for k in bratfit.params.values()]
+    
+    # Dose calculation
+    
+    # Single channel doses from rational calibration
+    DR = iratSf(Rim, aR, bR, cR, 2**16)
+    DG = iratSf(Gim, aG, bG, cG, 2**16)
+    DB = iratSf(Bim, aB, bB, cB, 2**16)
+
+    Dave = (DR + DG + DB) / 3
+
+    aR = deriv_iratSf(Rim, aR, bR, cR, 2**16)
+    aG = deriv_iratSf(Gim, aG, bG, cG, 2**16)
+    aB = deriv_iratSf(Bim, aB, bB, cB, 2**16)
+
+    RS = (aR + aG + aB)**2/(aR**2 + aG**2 + aB**2)/3
+
+    Dopt = Dave - RS * (aR * DR + aG * DG + aB * DB) / ((aR + aG + aB) / (1 - RS)) 
+
+    Dmax = float(config['DosePlane']['dmax'])
+    
+    Dopt[Dopt < 0]=0
+    Dopt[Dopt > Dmax]=Dmax
+
+    return Dopt
+
+def ratcalf(caldf):
+    """
+    A function to get the rational model calibration parameters from the current calibraion model
+    
+    ...
+    
+    Attributes
+    ----------
+    ratcaldf : pandas DataFrame
+        The current model calibration parameters
+        
+    
+    Returns
+    -------
+    ratcaldf : pandas DataFrame
+        The rational model calibration parameters
+
+    """
+    # Current multiphase calibration parameters
+    rcalps = caldf.iloc[0].values
+    gcalps = caldf.iloc[1].values
+    bcalps = caldf.iloc[2].values
+
+    # Background signal for every color channel
+    SbR, SbG, SbB = 2**16/10**rcalps[0], 2**16/10**gcalps[0], 2**16/10**bcalps[0]
+    
+    # Rational approximation
+    
+    # Define models
+    rratfmodel = Model(iratf)
+    gratfmodel = Model(iratf)
+    bratfmodel = Model(iratf)
+    
+    # Initialize parameters
+    rratparams = rratfmodel.make_params(
+        a = 0.1,
+        b = 0.1,
+        c = 0.1
+    )
+    
+    gratparams = gratfmodel.make_params(
+        a = 0.1,
+        b = 0.1,
+        c = 0.1
+    )
+    
+    bratparams = bratfmodel.make_params(
+        a = 0.1,
+        b = 0.1,
+        c = 0.1
+    ) 
+    
+    
+    # Generate calibration points
+    
+    vDrat = np.array([0.5, 0.75, 1., 1.25, 1.5, 2., 3., 4., 5., 7., 9.])
+    
+    vdrrat =  calf(vDrat, *rcalps)
+    vdgrat =  calf(vDrat, *gcalps)
+    vdbrat =  calf(vDrat, *bcalps)
+    
+    # Fit
+    rratfit = rratfmodel.fit(data=vDrat, params=rratparams, d=vdrrat)
+    gratfit = gratfmodel.fit(data=vDrat, params=gratparams, d=vdgrat)
+    bratfit = bratfmodel.fit(data=vDrat, params=bratparams, d=vdbrat)
+    
+    # Rational calibration paramters
+    aR, bR, cR = [k.value for k in rratfit.params.values()]
+    aG, bG, cG = [k.value for k in gratfit.params.values()]
+    aB, bB, cB = [k.value for k in bratfit.params.values()]
+
+    ratcaldf = pd.DataFrame(np.array([
+            [k.value for k in rratfit.params.values()],
+            [k.value for k in gratfit.params.values()],
+            [k.value for k in bratfit.params.values()]
+        ]), columns=['a', 'b', 'c'], index=['R', 'G', 'B']
+
+    )
+    return ratcaldf
+
+def mayermltchprocf(imfile=None, config=None, ratcaldf=None):
+    """
+    A function to process the dose distribution image using the Mayer implementation of the Micke multichannel method
+    
+    ...
+    
+    Attributes
+    ----------
+    imfile : str
+        The name of the image file, the file containing the scanned image of the dose distribution, the calibration strip and the base strip in TIFF format.
+        
+    config : ConfigParser
+        An object with the functionalities of the configparser module
+
+    ratcaldf : pandas DataFrame
+        The rational model calibration parameters
+        
+    
+    Returns
+    -------
+    Dopt : 2D numpy arrray 
+        The dose distribution
+    """
+    
+    dosefilename = Path(imfile)
+    dosefilename = dosefilename.with_suffix('.Film.tif')
+    
+    # Read the scanned dose image, and split the digital signal of each channel
+    im = imread(dosefilename)
+    Rim = im[..., 0]
+    Gim = im[..., 1]
+    Bim = im[..., 2]
+    
+    # Rational calibration paramters
+    aR, bR, cR = ratcaldf.loc['R'].a, ratcaldf.loc['R'].b, ratcaldf.loc['R'].c
+    aG, bG, cG = ratcaldf.loc['G'].a, ratcaldf.loc['G'].b, ratcaldf.loc['G'].c
+    aB, bB, cB = ratcaldf.loc['B'].a, ratcaldf.loc['B'].b, ratcaldf.loc['B'].c
+    
+    # Dose calculation
+    
+    # Single channel doses from rational calibration
+    DR = iratSf(Rim, aR, bR, cR, 2**16)
+    DG = iratSf(Gim, aG, bG, cG, 2**16)
+    DB = iratSf(Bim, aB, bB, cB, 2**16)
+
+    Dave = (DR + DG + DB) / 3
+
+    aR = deriv_iratSf(Rim, aR, bR, cR, 2**16)
+    aG = deriv_iratSf(Gim, aG, bG, cG, 2**16)
+    aB = deriv_iratSf(Bim, aB, bB, cB, 2**16)
+
+    RS = (aR + aG + aB)**2/(aR**2 + aG**2 + aB**2)/3
+
+    Dopt = Dave - RS * (aR * DR + aG * DG + aB * DB) / ((aR + aG + aB) / (1 - RS)) 
+
+    Dmax = float(config['DosePlane']['dmax'])
+    
+    Dopt[Dopt < 0]=0
+    Dopt[Dopt > Dmax]=Dmax
+
+    return Dopt
+
+def redprocf(imfile=None, config=None, ratcaldf=None):
+    """
+    A function to process the dose distribution image using the red channel monochrome method
+    
+    ...
+    
+    Attributes
+    ----------
+    imfile : str
+        The name of the image file, the file containing the scanned image of the dose distribution, the calibration strip and the base strip in TIFF format.
+        
+    config : ConfigParser
+        An object with the functionalities of the configparser module
+
+    ratcaldf : pandas DataFrame
+        The rational model calibration parameters
+        
+    
+    Returns
+    -------
+    DR : 2D numpy arrray 
+        The dose distribution
+    """
+    
+    dosefilename = Path(imfile)
+    dosefilename = dosefilename.with_suffix('.Film.tif')
+    
+    # Read the scanned dose image, and split the digital signal of each channel
+    im = imread(dosefilename)
+    Rim = im[..., 0]
+    Gim = im[..., 1]
+    Bim = im[..., 2]
+    
+    # Rational calibration paramters
+    aR, bR, cR = ratcaldf.loc['R'].a, ratcaldf.loc['R'].b, ratcaldf.loc['R'].c
+    aG, bG, cG = ratcaldf.loc['G'].a, ratcaldf.loc['G'].b, ratcaldf.loc['G'].c
+    aB, bB, cB = ratcaldf.loc['B'].a, ratcaldf.loc['B'].b, ratcaldf.loc['B'].c
+    
+    # Dose calculation
+    
+    # Single channel doses from rational calibration
+    DR = iratSf(Rim, aR, bR, cR, 2**16)
+
+    Dmax = float(config['DosePlane']['dmax'])
+    
+    DR[DR < 0]=0
+    DR[DR > Dmax]=Dmax
+
+    return DR
+
+def greenprocf(imfile=None, config=None, ratcaldf=None):
+    """
+    A function to process the dose distribution image using the green channel monochrome method
+    
+    ...
+    
+    Attributes
+    ----------
+    imfile : str
+        The name of the image file, the file containing the scanned image of the dose distribution, the calibration strip and the base strip in TIFF format.
+        
+    config : ConfigParser
+        An object with the functionalities of the configparser module
+
+    ratcaldf : pandas DataFrame
+        The rational model calibration parameters
+        
+    
+    Returns
+    -------
+    DG : 2D numpy arrray 
+        The dose distribution
+    """
+    
+    dosefilename = Path(imfile)
+    dosefilename = dosefilename.with_suffix('.Film.tif')
+    
+    # Read the scanned dose image, and split the digital signal of each channel
+    im = imread(dosefilename)
+    Rim = im[..., 0]
+    Gim = im[..., 1]
+    Bim = im[..., 2]
+    
+    # Rational calibration paramters
+    aR, bR, cR = ratcaldf.loc['R'].a, ratcaldf.loc['R'].b, ratcaldf.loc['R'].c
+    aG, bG, cG = ratcaldf.loc['G'].a, ratcaldf.loc['G'].b, ratcaldf.loc['G'].c
+    aB, bB, cB = ratcaldf.loc['B'].a, ratcaldf.loc['B'].b, ratcaldf.loc['B'].c
+    
+    # Dose calculation
+    
+    # Single channel doses from rational calibration
+    DG = iratSf(Gim, aG, bG, cG, 2**16)
+
+    Dmax = float(config['DosePlane']['dmax'])
+    
+    DG[DG < 0]=0
+    DG[DG > Dmax]=Dmax
+
+    return DG
+
+def blueprocf(imfile=None, config=None, ratcaldf=None):
+    """
+    A function to process the dose distribution image using the blue channel monochrome method
+    
+    ...
+    
+    Attributes
+    ----------
+    imfile : str
+        The name of the image file, the file containing the scanned image of the dose distribution, the calibration strip and the base strip in TIFF format.
+        
+    config : ConfigParser
+        An object with the functionalities of the configparser module
+
+    ratcaldf : pandas DataFrame
+        The rational model calibration parameters
+        
+    
+    Returns
+    -------
+    DR : 2D numpy arrray 
+        The dose distribution
+    """
+    
+    dosefilename = Path(imfile)
+    dosefilename = dosefilename.with_suffix('.Film.tif')
+    
+    # Read the scanned dose image, and split the digital signal of each channel
+    im = imread(dosefilename)
+    Rim = im[..., 0]
+    Gim = im[..., 1]
+    Bim = im[..., 2]
+    
+    # Rational calibration paramters
+    aR, bR, cR = ratcaldf.loc['R'].a, ratcaldf.loc['R'].b, ratcaldf.loc['R'].c
+    aG, bG, cG = ratcaldf.loc['G'].a, ratcaldf.loc['G'].b, ratcaldf.loc['G'].c
+    aB, bB, cB = ratcaldf.loc['B'].a, ratcaldf.loc['B'].b, ratcaldf.loc['B'].c
+    
+    # Dose calculation
+    
+    # Single channel doses from rational calibration
+    DB = iratSf(Bim, aB, bB, cB, 2**16)
+
+    Dmax = float(config['DosePlane']['dmax'])
+    
+    DB[DB < 0]=0
+    DB[DB > Dmax]=Dmax
+
+    return DB
