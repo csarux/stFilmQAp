@@ -93,7 +93,7 @@ def run(img_dir, labels):
     resized_rects = im.get_resized_rects()
     rects = st_img_label(resized_img, box_color="red", rects=resized_rects)
 
-    def process():
+    def nlm_process():
         imfile = 'img_dir/' + scim.name
         im.save_annotation()
         image_annotate_file_name = img_file_name.split(".")[0] + ".xml"
@@ -112,6 +112,10 @@ def run(img_dir, labels):
         configfile='config/filmQAp.config'
         config.read(configfile)
 
+        # Leer el valor de la dosis máxima fijado en la configuración
+        if 'Dmax' not in st.session_state:
+            st.session_state.Dmax = fqa.getDmax(config=config)
+        
         # Determinar las coordenadas para la corrección lateral
         cdf = fqa.coordOAC(imfile=imfile)
         # Determinación del fondo
@@ -135,11 +139,131 @@ def run(img_dir, labels):
                 st.session_state.frows = frows
                 st.success('Convertida a dosis la información de la película.')
         else:
-            st.error('Error: Plano de dosis calculado en el planificador no introducido, no es posible completar el postprocesado de la dosis medida por la película.')
+            st.error('Error: No se ha configurado el valor de la dosis máxima medible.')
 
+    def mayer_process():
+        config = fqa.readConfig(os.path.join('config', 'filmQAp.config'))
+
+        img_file_name = os.path.join('img_dir', 'Film.tif')
+
+        abase = fqa.baseDetermination(imfile=img_file_name, config=config)
+
+        caldf, cdf, sips = fqa.PDDCalibration(imfile=img_file_name, config=config, base=abase)
+        ratcaldf = fqa.ratcalf(caldf)
+
+        # Incorporar al estado de la aplicación
+        if 'caldf' not in st.session_state:
+            st.session_state.caldf = caldf
+        if 'cddf' not in st.session_state:
+            st.session_state.cddf = cdf
+        if 'fps' not in st.session_state:
+            st.session_state.fps = sips
+
+        # Calcular la dosis
+        Dim = fqa.mayermltchprocf(imfile=img_file_name, config=config, ratcaldf=ratcaldf)
+        st.session_state.fDim = Dim
+        if 'fDim' in st.session_state:
+            fcols, frows = Dim.shape
+            st.session_state.fcols = fcols
+            st.session_state.frows = frows
+            st.success('Convertida a dosis la información de la película.')
+        
+        return
+
+    def red_process():
+        config = fqa.readConfig(os.path.join('config', 'filmQAp.config'))
+
+        img_file_name = os.path.join('img_dir', 'Film.tif')
+
+        abase = fqa.baseDetermination(imfile=img_file_name, config=config)
+
+        caldf, cdf, sips = fqa.PDDCalibration(imfile=img_file_name, config=config, base=abase)
+        ratcaldf = fqa.ratcalf(caldf)
+
+         # Incorporar al estado de la aplicación
+        if 'caldf' not in st.session_state:
+            st.session_state.caldf = caldf
+        if 'cddf' not in st.session_state:
+            st.session_state.cddf = cdf
+        if 'fps' not in st.session_state:
+            st.session_state.fps = sips
+
+        # Calcular la dosis
+        Dim = fqa.redprocf(imfile=img_file_name, config=config, ratcaldf=ratcaldf)
+        st.session_state.fDim = Dim
+        if 'fDim' in st.session_state:
+            fcols, frows = Dim.shape
+            st.session_state.fcols = fcols
+            st.session_state.frows = frows
+            st.success('Convertida a dosis la información de la película.')
+
+        return 
+
+    def green_process():
+        config = fqa.readConfig(os.path.join('config', 'filmQAp.config'))
+
+        img_file_name = os.path.join('img_dir', 'Film.tif')
+
+        abase = fqa.baseDetermination(imfile=img_file_name, config=config)
+
+        caldf, cdf, sips = fqa.PDDCalibration(imfile=img_file_name, config=config, base=abase)
+        ratcaldf = fqa.ratcalf(caldf)
+
+        # Incorporar al estado de la aplicación
+        if 'caldf' not in st.session_state:
+            st.session_state.caldf = caldf
+        if 'cddf' not in st.session_state:
+            st.session_state.cddf = cdf
+        if 'fps' not in st.session_state:
+            st.session_state.fps = sips
+
+        # Calcular la dosis
+        Dim = fqa.greenprocf(imfile=img_file_name, config=config, ratcaldf=ratcaldf)
+        st.session_state.fDim = Dim
+        if 'fDim' in st.session_state:
+            fcols, frows = Dim.shape
+            st.session_state.fcols = fcols
+            st.session_state.frows = frows
+            st.success('Convertida a dosis la información de la película.')
+
+        return
+
+    def blue_process():
+        config = fqa.readConfig(os.path.join('config', 'filmQAp.config'))
+
+        img_file_name = os.path.join('img_dir', 'Film.tif')
+
+        abase = fqa.baseDetermination(imfile=img_file_name, config=config)
+
+        caldf, cdf, sips = fqa.PDDCalibration(imfile=img_file_name, config=config, base=abase)
+        ratcaldf = fqa.ratcalf(caldf)
+
+        # Incorporar al estado de la aplicación
+        if 'caldf' not in st.session_state:
+            st.session_state.caldf = caldf
+        if 'cddf' not in st.session_state:
+            st.session_state.cddf = cdf
+        if 'fps' not in st.session_state:
+            st.session_state.fps = sips
+
+        # Calcular la dosis
+        Dim = fqa.blueprocf(imfile=img_file_name, config=config, ratcaldf=ratcaldf)
+        st.session_state.fDim = Dim
+        if 'fDim' in st.session_state:
+            fcols, frows = Dim.shape
+            st.session_state.fcols = fcols
+            st.session_state.frows = frows
+            st.success('Convertida a dosis la información de la película.')
+        return 
+        
     if rects:
         with st.sidebar:
-            st.button(label="Process", on_click=process)
+            st.button(label="NLM Process", on_click=nlm_process)
+            st.button(label="Multichannel Process", on_click=mayer_process)
+            st.button(label="Red Channel Process", on_click=red_process)
+            st.button(label="Green Channel Process", on_click=green_process)
+            st.button(label="Blue Channel Process", on_click=blue_process)
+
 
         preview_imgs = im.init_annotation(rects)
 
@@ -159,7 +283,7 @@ def run(img_dir, labels):
                 im.set_annotation(i, select_label)
 
 if __name__ == "__main__":
-    st.header('2. Procesar el plano de dosis medido mediante la película')
+    st.header('1. Procesar el plano de dosis medido mediante la película')
 
     scim = st.file_uploader('Digitalización de la película:', help='Seleccionar el archivo TIFF adquirido en el escáner.')
 
