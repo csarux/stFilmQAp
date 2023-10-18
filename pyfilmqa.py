@@ -1748,6 +1748,10 @@ def postmphspcnlmprocf(Dim=None, config=None):
 
     mphspcnlmprocim = np.nan_to_num(mphspcnlmprocim, posinf=1e10, neginf=-1e10)
 
+    slope, intercept = float(config['Calibration']['slope']), float(config['Calibration']['intercept'])
+
+    mphspcnlmprocim = mphspcnlmprocim * slope + intercept
+
     mphspcnlmprocim[mphspcnlmprocim < 0] = 0
 
     mphspcnlmprocim[mphspcnlmprocim > Dmax] = Dmax
