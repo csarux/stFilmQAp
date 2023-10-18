@@ -6,3 +6,5 @@ patTests
 
 # Ignora el archivo de configuración
 config/filmQap.config
+img_dir/.ipynb_checkpoints/dcmWriter-checkpoint.ipynb
+img_dir/.ipynb_checkpoints/Mayer-checkpoint.ipynb
